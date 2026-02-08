@@ -1,13 +1,14 @@
 # Specification
 
 ## Summary
-**Goal:** When an admin creates a member with manually provided credentials, automatically generate simulated onboarding messages (Email/SMS/WhatsApp) and show them in-app as communication logs that can be copied.
+**Goal:** Allow admin-created members to log in using real email/password credentials and access the member portal without requiring Internet Identity.
 
 **Planned changes:**
-- Backend: Extend the admin member-creation flow used by `useCreateMemberWithManualCredentials` to create/persist the `MemberProfile`, store the provided credentials mapping, and return a `ManualCreateMemberResponse` containing the member, credentials, and `communicationLogs`.
-- Backend: Generate exactly three communication log entries (`#email`, `#sms`, `#whatsapp`) with English content that includes login email/password, membership plan name/duration/price, and membership validity dates (or equivalent stored validity info), and mark them consistently as simulated/not-delivered (e.g., `#pending` or `#failed` with reason).
-- Backend: Enforce admin-only access and reject non-admin callers; prevent partial state on errors such as non-unique email.
-- Frontend: Update the Add Member success experience in `frontend/src/components/admin/MemberManagement.tsx` to render the returned `communicationLogs`, clearly labeled as simulated/not delivered, while keeping copy-to-clipboard for email/password and message content.
-- Frontend: Update `frontend/src/components/admin/CommunicationSimulation.tsx` so any status label does not imply real delivery, and add a prominent English disclaimer wherever these logs appear that SMS/WhatsApp/Email delivery is not supported and messages must be copied/shared manually.
+- Implement backend email/password authentication for the existing `memberLogin(email, password)` flow, returning the logged-in member profile in the format expected by the frontend.
+- Ensure invalid login attempts return a deterministic error message containing "Invalid credentials provided".
+- Update backend member creation via `addMemberWithManualCredentials` to persist credentials, enforce unique emails, and associate credentials with the created member.
+- Remove stored credentials when a member is deleted so deleted members can no longer log in.
+- Enable member dashboard/backend member-portal operations to work for email/password-authenticated members (without Internet Identity), while preventing access to other members’ data.
+- Preserve current admin authentication/authorization requirements using Internet Identity (no weakening of admin-only permissions).
 
-**User-visible outcome:** After an admin adds a member, the app shows simulated Email/SMS/WhatsApp onboarding messages (with credentials and plan/payment details) as in-app logs that the admin can copy, with clear disclaimers that nothing is actually sent to real devices.
+**User-visible outcome:** Members created by an admin can log in from the existing Member Login form with their email/password, and then load and use the Member Dashboard/portal features without needing Internet Identity.

@@ -1,9 +1,6 @@
 import Map "mo:core/Map";
 import Array "mo:core/Array";
-import Iter "mo:core/Iter";
 import Principal "mo:core/Principal";
-import Blob "mo:core/Blob";
-import Nat8 "mo:core/Nat8";
 import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
@@ -16,8 +13,9 @@ import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 import OutCall "http-outcalls/outcall";
 import Stripe "stripe/stripe";
+import Migration "migration";
 
-
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -296,6 +294,7 @@ actor {
   let registeredMembers = Map.empty<Principal, RegisteredMemberInfo>();
   let memberCredentials = Map.empty<Text, Text>();
   let communicationLogs = Map.empty<Text, CommunicationLogEntry>();
+  let emailToPrincipal = Map.empty<Text, Principal>();
 
   func generateId() : Text {
     let id = "id" # memberIdCounter.toText();
@@ -558,7 +557,10 @@ actor {
     };
 
     switch (members.get(id)) {
-      case (?member) { memberCredentials.remove(member.email) };
+      case (?member) {
+        memberCredentials.remove(member.email);
+        emailToPrincipal.remove(member.email);
+      };
       case (null) {};
     };
 

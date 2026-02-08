@@ -2,10 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-admin-ui-member-creation-success-experience-to-clearly-present-email-sms-whatsapp-outputs-as-simulated-not-delivered-communication-logs-not-real-notifications-while-still-allowing-the-admin-to-copy-credentials-and-message-content",
-      "featureTitle": "Update the admin UI member-creation success experience to clearly present Email/SMS/WhatsApp outputs as simulated/not-delivered communication logs (not real notifications), while still allowing the admin to copy credentials and message content.",
+      "featureId": "feature-make-the-member-dashboard-data-access-flow-work-for-email-password-authenticated-members-after-login-i-e-member-portal-screens-can-load-the-logged-in-member-s-data-without-requiring-the-caller-to-be-authenticated-via-internet-identity",
+      "featureTitle": "Make the member dashboard data-access flow work for email/password-authenticated members after login (i.e., member portal screens can load the logged-in member’s data without requiring the caller to be authenticated via Internet Identity).",
       "files": [
-        "frontend/src/components/admin/CommunicationSimulation.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/components/DashboardLayout.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,33 +24,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-consistent-ui-disclaimer-anywhere-the-app-shows-email-sms-whatsapp-notifications-that-these-channels-are-simulated-in-app-logs-and-will-not-be-delivered-to-a-phone-number-within-this-platform-build",
-      "featureTitle": "Add a consistent UI disclaimer anywhere the app shows Email/SMS/WhatsApp ‘notifications’ that these channels are simulated in-app logs and will not be delivered to a phone number within this platform build.",
-      "files": [
-        "frontend/src/components/admin/CommunicationDisclaimer.tsx",
-        "frontend/src/components/admin/CommunicationSimulation.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "qr-code@1.0.0",
-        "stripe@3.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "camera@1.0.0",
-        "http-outcalls@3.0.0",
-        "user-approval@3.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
+        "REQ-6"
       ],
       "confidence": "high"
     }

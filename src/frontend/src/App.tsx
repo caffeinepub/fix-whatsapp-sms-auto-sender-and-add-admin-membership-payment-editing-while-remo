@@ -136,7 +136,7 @@ export default function App() {
                   queryClient.clear();
                   window.location.reload();
                 }} 
-                className="w-full"
+                className="w-full mt-4"
               >
                 Return to Login
               </Button>
@@ -149,159 +149,82 @@ export default function App() {
   }
 
   // Admin authentication flow (Internet Identity)
-  // Show error if profile fetch failed
-  if (profileError && isAdminAuthenticated) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10 p-4">
-          <Alert variant="destructive" className="max-w-md">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Profile Error</AlertTitle>
-            <AlertDescription className="mt-2 space-y-4">
-              <p>Failed to load your profile. Please try again.</p>
-              <div className="flex gap-2">
-                <Button onClick={() => window.location.reload()} className="flex-1">
-                  Retry
-                </Button>
-                <Button onClick={() => clear()} variant="outline" className="flex-1">
-                  Logout
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </div>
-        <Toaster />
-      </ThemeProvider>
-    );
-  }
-
-  // Show loading while fetching profile
-  if ((profileLoading || actorFetching) && !profileFetched) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-lg text-muted-foreground">Loading your profile...</p>
-          </div>
-        </div>
-        <Toaster />
-      </ThemeProvider>
-    );
-  }
-
-  // Authenticated but no profile - this shouldn't happen in normal flow
-  // Members are created by admins, admins register through the login page
-  if (isAdminAuthenticated && profileFetched && userProfile === null) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10 p-4">
-          <Alert variant="destructive" className="max-w-md">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Profile Not Found</AlertTitle>
-            <AlertDescription className="mt-2 space-y-4">
-              <p>No profile found for your account. Please contact the gym administrator to set up your account.</p>
-              <p className="text-sm text-muted-foreground">
-                Note: Member accounts must be created by the gym administrator. If you are an administrator, please register through the login page.
-              </p>
-              <Button onClick={() => clear()} className="w-full">
-                Return to Login
-              </Button>
-            </AlertDescription>
-          </Alert>
-        </div>
-        <Toaster />
-      </ThemeProvider>
-    );
-  }
-
-  // Show error if role fetch failed
-  if (roleError && isAdminAuthenticated) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10 p-4">
-          <Alert variant="destructive" className="max-w-md">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Authorization Error</AlertTitle>
-            <AlertDescription className="mt-2 space-y-4">
-              <p>Failed to verify your access level. Please try again.</p>
-              <div className="flex gap-2">
-                <Button onClick={() => window.location.reload()} className="flex-1">
-                  Retry
-                </Button>
-                <Button onClick={() => clear()} variant="outline" className="flex-1">
-                  Logout
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </div>
-        <Toaster />
-      </ThemeProvider>
-    );
-  }
-
-  // Show loading while fetching role
-  if (roleLoading) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-lg text-muted-foreground">Loading dashboard...</p>
-          </div>
-        </div>
-        <Toaster />
-      </ThemeProvider>
-    );
-  }
-
-  // Route based on user role (Admin only at this point)
-  const renderDashboard = () => {
-    if (!userRole) {
+  if (isAdminAuthenticated) {
+    // Show loading while actor or profile is loading
+    if (actorFetching || profileLoading || roleLoading) {
       return (
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="text-lg text-muted-foreground">Loading your dashboard...</p>
+            </div>
+          </div>
+          <Toaster />
+        </ThemeProvider>
+      );
+    }
+
+    // Show error if profile or role failed to load
+    if (profileError || roleError) {
+      return (
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10 p-4">
+            <Alert variant="destructive" className="max-w-md">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error Loading Profile</AlertTitle>
+              <AlertDescription className="mt-2 space-y-4">
+                <p>Failed to load your profile or role information.</p>
+                <Button onClick={() => window.location.reload()} className="w-full mt-4">
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </div>
+          <Toaster />
+        </ThemeProvider>
+      );
+    }
+
+    // Admin authenticated and profile loaded - show Admin Dashboard
+    if (userProfile && userRole === UserRole.admin) {
+      return (
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AdminDashboard />
+          <Toaster />
+        </ThemeProvider>
+      );
+    }
+
+    // Authenticated but not admin - show error
+    return (
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10 p-4">
           <Alert variant="destructive" className="max-w-md">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Access Denied</AlertTitle>
             <AlertDescription className="mt-2 space-y-4">
-              <p>Unable to determine your access level. Please contact support.</p>
-              <Button onClick={() => clear()} className="w-full">
+              <p>You do not have admin access to this application.</p>
+              <Button onClick={() => clear()} className="w-full mt-4">
                 Logout
               </Button>
             </AlertDescription>
           </Alert>
         </div>
-      );
-    }
+        <Toaster />
+      </ThemeProvider>
+    );
+  }
 
-    switch (userRole) {
-      case UserRole.admin:
-        return <AdminDashboard />;
-      case UserRole.user:
-        // Internet Identity users with 'user' role should also go to Member Dashboard
-        return <MemberDashboard />;
-      default:
-        return (
-          <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10 p-4">
-            <Alert variant="destructive" className="max-w-md">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Access Denied</AlertTitle>
-              <AlertDescription className="mt-2 space-y-4">
-                <p>You don't have permission to access this application.</p>
-                <Button onClick={() => clear()} className="w-full">
-                  Logout
-                </Button>
-              </AlertDescription>
-            </Alert>
-          </div>
-        );
-    }
-  };
-
+  // Fallback - should not reach here
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      {renderDashboard()}
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-background via-background to-accent/10">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-lg text-muted-foreground">Loading...</p>
+        </div>
+      </div>
       <Toaster />
     </ThemeProvider>
   );

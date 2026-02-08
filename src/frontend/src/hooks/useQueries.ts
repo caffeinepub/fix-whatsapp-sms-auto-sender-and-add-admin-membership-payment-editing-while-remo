@@ -58,6 +58,18 @@ function serializeMemberProfileForStorage(profile: MemberProfile): any {
   };
 }
 
+// Helper to check if user is email/password authenticated member
+function isEmailPasswordMember(): boolean {
+  const memberAuth = sessionStorage.getItem('memberAuth');
+  if (!memberAuth) return false;
+  try {
+    const authData = JSON.parse(memberAuth);
+    return authData.authenticated === true;
+  } catch {
+    return false;
+  }
+}
+
 // User Profile Queries
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -364,11 +376,24 @@ export function useGetAllPayments() {
 
 export function useGetMemberPayments() {
   const { actor, isFetching } = useActor();
+  const queryClient = useQueryClient();
 
   return useQuery<Payment[]>({
     queryKey: ['memberPayments'],
     queryFn: async () => {
       if (!actor) return [];
+      
+      // For email/password members, filter from cached member profile
+      if (isEmailPasswordMember()) {
+        const memberProfile = queryClient.getQueryData<MemberProfile>(['authenticatedMember']);
+        if (!memberProfile) return [];
+        
+        // Get all payments and filter by member principal
+        const allPayments = await actor.getAllPayments();
+        return allPayments.filter(p => p.memberId.toString() === memberProfile.principal.toString());
+      }
+      
+      // For Internet Identity users, use the backend method
       return actor.getMemberPayments();
     },
     enabled: !!actor && !isFetching,
@@ -426,11 +451,19 @@ export function useAddExpense() {
 // Class Booking Queries
 export function useGetMemberClassBookings() {
   const { actor, isFetching } = useActor();
+  const queryClient = useQueryClient();
 
   return useQuery<ClassBooking[]>({
     queryKey: ['memberClassBookings'],
     queryFn: async () => {
       if (!actor) return [];
+      
+      // For email/password members, return empty array (they can't book classes via backend)
+      if (isEmailPasswordMember()) {
+        return [];
+      }
+      
+      // For Internet Identity users, use the backend method
       return actor.getMemberClassBookings();
     },
     enabled: !!actor && !isFetching,
@@ -470,11 +503,19 @@ export function useUpdateClassBooking() {
 // Attendance Queries
 export function useGetMemberAttendance() {
   const { actor, isFetching } = useActor();
+  const queryClient = useQueryClient();
 
   return useQuery<AttendanceRecord[]>({
     queryKey: ['memberAttendance'],
     queryFn: async () => {
       if (!actor) return [];
+      
+      // For email/password members, return empty array (they can't access attendance via backend)
+      if (isEmailPasswordMember()) {
+        return [];
+      }
+      
+      // For Internet Identity users, use the backend method
       return actor.getMemberAttendance();
     },
     enabled: !!actor && !isFetching,
@@ -562,14 +603,72 @@ export function useGetMemberProfile() {
   });
 }
 
-// Member Notifications Query
+// Member Notifications Query - uses cached profile for email/password members
 export function useGetMemberNotifications() {
   const { actor, isFetching } = useActor();
+  const queryClient = useQueryClient();
 
   return useQuery<Notification[]>({
     queryKey: ['memberNotifications'],
     queryFn: async () => {
       if (!actor) return [];
+      
+      // For email/password members, generate notifications client-side from cached profile
+      if (isEmailPasswordMember()) {
+        const memberProfile = queryClient.getQueryData<MemberProfile>(['authenticatedMember']);
+        if (!memberProfile) return [];
+        
+        // Generate notifications client-side (similar to backend logic)
+        const notifications: Notification[] = [];
+        const now = Date.now() * 1000000; // Convert to nanoseconds
+        const weekNanos = 7 * 24 * 60 * 60 * 1000000000;
+        
+        const endDate = Number(memberProfile.endDate);
+        
+        // Membership expiring soon
+        if (endDate > now && endDate < (now + weekNanos)) {
+          notifications.push({
+            title: 'Membership Expiring Soon',
+            message: `Your membership will expire soon: ${new Date(Number(memberProfile.endDate) / 1000000).toLocaleDateString()}`,
+            icon: '⚠️',
+            color: '#FFD700',
+            priority: BigInt(2),
+            actions: [['Renew Now', '/renew']],
+            timestamp: BigInt(now),
+          });
+        }
+        
+        // Membership expired
+        if (now > endDate) {
+          notifications.push({
+            title: 'Membership Expired',
+            message: `Your membership expired: ${new Date(Number(memberProfile.endDate) / 1000000).toLocaleDateString()}`,
+            icon: '⌛️',
+            color: '#FF6347',
+            priority: BigInt(1),
+            actions: [['Renew Now', '/renew']],
+            timestamp: BigInt(now),
+          });
+        }
+        
+        // Payment due notification (simplified - assumes no payments made)
+        const memberPlanCost = Number(memberProfile.membershipPlan.price);
+        if (memberPlanCost > 0) {
+          notifications.push({
+            title: 'Payment Due',
+            message: `You have an outstanding payment of ₹${memberPlanCost}`,
+            icon: '💰',
+            color: '#FF6347',
+            priority: BigInt(0),
+            actions: [['Pay Now', '/pay']],
+            timestamp: BigInt(now),
+          });
+        }
+        
+        return notifications;
+      }
+      
+      // For Internet Identity users, use the backend method
       return actor.getMemberNotifications();
     },
     enabled: !!actor && !isFetching,
@@ -589,22 +688,31 @@ export function useGenerateQrCode() {
   });
 }
 
+export function useGetMyQrCode() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<string | null>({
+    queryKey: ['myQrCode'],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getMyQrCode();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useValidateQrCode() {
   const { actor } = useActor();
-  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (qrCode: string) => {
+    mutationFn: async (qr: string) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.validateQrCode(qrCode);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['memberAttendance'] });
+      return actor.validateQrCode(qr);
     },
   });
 }
 
-// Reports Queries
+// Reports Query
 export function useGetReports() {
   const { actor, isFetching } = useActor();
 
@@ -618,28 +726,28 @@ export function useGetReports() {
   });
 }
 
-// Stripe Queries
-export function useIsStripeConfigured() {
+// Registered Members Query
+export function useGetRegisteredMembers() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<boolean>({
-    queryKey: ['stripeConfigured'],
+  return useQuery<RegisteredMemberInfo[]>({
+    queryKey: ['registeredMembers'],
     queryFn: async () => {
-      if (!actor) return false;
-      return actor.isStripeConfigured();
+      if (!actor) return [];
+      return actor.getRegisteredMembers();
     },
     enabled: !!actor && !isFetching,
   });
 }
 
-export function useGetAttendanceByMember() {
+// Communication Logs Query
+export function useGetCommunicationLogsByEmail() {
   const { actor } = useActor();
 
   return useMutation({
-    mutationFn: async (memberId: Principal) => {
+    mutationFn: async (email: string) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.getAttendanceByMember(memberId);
+      return actor.getCommunicationLogsByEmail(email);
     },
   });
 }
-

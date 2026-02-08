@@ -1,13 +1,14 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
-  "summary": "Gym membership management app (Prime Fit Gym) with admin tools for editing memberships/payments, removal of expense tracking, and automated member notifications (email/SMS/WhatsApp) for credentials and plan/payment details.",
+  "projectStateVersion": 5,
+  "summary": "Gym membership management app (Prime Fit Gym) with admin tools for editing memberships/payments, removal of expense tracking, automated member notifications (email/SMS/WhatsApp), and support for real member login accounts for admin-added members (not just simulated credentials/logs).",
   "architectural_notes": [
     "App/project name: Prime Fit Gym.",
     "Notification system required: backend event/log should correspond to actual outbound delivery (email/SMS/WhatsApp), not just backend status."
   ],
   "known_issues": [
-    "Email/SMS/WhatsApp notifications appear in backend but are not being delivered to the phone number."
+    "Email/SMS/WhatsApp notifications appear in backend but are not being delivered to the phone number.",
+    "Admin-added members cannot log in because no real auth account/credentials are created (credentials generation currently disabled/returns trap)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -24,6 +25,14 @@
       "title": "Add a consistent UI disclaimer anywhere the app shows Email/SMS/WhatsApp ‘notifications’ that these channels are simulated in-app logs and will not be delivered to a phone number within this platform build.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-the-member-dashboard-data-access-flow-work-for-email-password-authenticated-members-after-login-i-e-member-portal-screens-can-load-the-logged-in-member-s-data-without-requiring-the-caller-to-be-authenticated-via-internet-identity",
+      "title": "Make the member dashboard data-access flow work for email/password-authenticated members after login (i.e., member portal screens can load the logged-in member’s data without requiring the caller to be authenticated via Internet Identity).",
+      "reqIds": [
+        "REQ-6"
       ],
       "version": 1
     }
@@ -64,6 +73,28 @@
       "summary": "Implement backend support for admin-created members to return a complete onboarding payload that includes the member profile, the admin-provided credentials, and generated communication log entries for Email, SMS, and WhatsApp containing the member’s login credentials plus membership plan and payment details.",
       "reqIds": [
         "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Enable real member login for admin-added members (create usable auth accounts/credentials so members can log in after admin creates them)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Implement backend support for real email/password authentication for admin-created members so that a member added by an admin can successfully log in from the existing Member Login form.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Update the backend admin member-creation pathway that accepts manual credentials (used by `addMemberWithManualCredentials`) to persist those credentials and associate them with the created member record so the member can later log in with the same email/password.",
+      "reqIds": [
+        "REQ-5"
       ],
       "status": "pending"
     }

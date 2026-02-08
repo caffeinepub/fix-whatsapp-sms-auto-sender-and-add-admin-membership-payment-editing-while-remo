@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useGetCallerUserProfile } from '../hooks/useQueries';
+import { useGetCallerUserProfile, useGetMemberProfile } from '../hooks/useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,14 +25,24 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const { clear } = useInternetIdentity();
   const { data: userProfile } = useGetCallerUserProfile();
+  const { data: memberProfile } = useGetMemberProfile();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const [profilePicModalOpen, setProfilePicModalOpen] = useState(false);
 
   const handleLogout = async () => {
-    await clear();
-    queryClient.clear();
+    if (role === 'member') {
+      // Clear member session storage
+      sessionStorage.removeItem('memberAuth');
+      sessionStorage.removeItem('memberProfileCache');
+      queryClient.clear();
+      window.location.href = '/';
+    } else {
+      // Admin logout via Internet Identity
+      await clear();
+      queryClient.clear();
+    }
   };
 
   const getRoleLabel = () => {
@@ -53,7 +63,9 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       .slice(0, 2);
   };
 
-  const profilePicUrl = userProfile?.profilePic?.getDirectURL();
+  // Use member profile for members, user profile for admins
+  const displayProfile = role === 'member' ? memberProfile : userProfile;
+  const profilePicUrl = displayProfile?.profilePic?.getDirectURL();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
@@ -95,28 +107,30 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
                     }}
                   >
                     {profilePicUrl ? (
-                      <AvatarImage src={profilePicUrl} alt={userProfile?.name} />
+                      <AvatarImage src={profilePicUrl} alt={displayProfile?.name} />
                     ) : (
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        {userProfile ? getInitials(userProfile.name) : 'U'}
+                        {displayProfile ? getInitials(displayProfile.name) : 'U'}
                       </AvatarFallback>
                     )}
                   </Avatar>
-                  <span className="hidden sm:inline">{userProfile?.name || 'User'}</span>
+                  <span className="hidden sm:inline">{displayProfile?.name || 'User'}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{userProfile?.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{userProfile?.email}</p>
+                    <p className="text-sm font-medium leading-none">{displayProfile?.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{displayProfile?.email}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setProfileSettingsOpen(true)}>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile Settings
-                </DropdownMenuItem>
+                {role === 'admin' && (
+                  <DropdownMenuItem onClick={() => setProfileSettingsOpen(true)}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile Settings
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
@@ -134,7 +148,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       {/* Footer */}
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
         <p>
-          © 2025. Built with ❤️ using{' '}
+          © 2026. Built with ❤️ using{' '}
           <a
             href="https://caffeine.ai"
             target="_blank"
@@ -146,16 +160,18 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         </p>
       </footer>
 
-      {/* Profile Settings Dialog */}
-      <ProfileSettings open={profileSettingsOpen} onOpenChange={setProfileSettingsOpen} />
+      {/* Profile Settings Dialog - only for admins */}
+      {role === 'admin' && (
+        <ProfileSettings open={profileSettingsOpen} onOpenChange={setProfileSettingsOpen} />
+      )}
 
       {/* Profile Picture Modal */}
-      {profilePicUrl && userProfile && (
+      {profilePicUrl && displayProfile && (
         <ProfilePictureModal
           open={profilePicModalOpen}
           onOpenChange={setProfilePicModalOpen}
           imageUrl={profilePicUrl}
-          altText={userProfile.name}
+          altText={displayProfile.name}
         />
       )}
     </div>
