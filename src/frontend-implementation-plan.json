@@ -1,0 +1,50 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Admin member-creation success UX for simulated onboarding communication logs",
+  "requirements": [
+    {
+      "id": "REQ-2",
+      "summary": "Update the Add Member success experience to present Email/SMS/WhatsApp outputs as simulated in-app communication logs (not real delivery) while preserving copy-to-clipboard for credentials and message content.",
+      "acceptanceCriteria": [
+        "After successfully creating a member via the existing Add Member dialog in `frontend/src/components/admin/MemberManagement.tsx`, the success dialog renders the returned `communicationLogs` and clearly labels them as simulation/not delivered (English text).",
+        "`frontend/src/components/admin/CommunicationSimulation.tsx` displays channel, timestamp, and message content as it does today, but the status label does not imply real delivery (e.g., it must not show “Sent” as a real-world outcome).",
+        "The UI continues to provide copy-to-clipboard for the email and password and does not regress existing member creation functionality.",
+        "Any user-facing explanatory text is in English."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/admin/MemberManagement.tsx",
+          "operation": "modify",
+          "description": "Adjust the post-create success dialog UX so it explicitly frames returned Email/SMS/WhatsApp items as simulated in-app logs (not real notifications) and continues to render the `ManualCreateMemberResponse` via the existing `CommunicationSimulation` view."
+        },
+        {
+          "path": "frontend/src/components/admin/CommunicationSimulation.tsx",
+          "operation": "modify",
+          "description": "Update communication log status rendering so it never implies real-world delivery (e.g., replace any \"sent\"/\"Sent\" wording with an explicit simulated label), and ensure channel/timestamp/content presentation remains intact with copy-to-clipboard preserved."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add a prominent, consistent disclaimer anywhere the app shows Email/SMS/WhatsApp notification-like items that these are simulated in-app logs and are not delivered to real devices in this build.",
+      "acceptanceCriteria": [
+        "At least one prominent disclaimer is shown in the admin communication log/simulation UI explaining that SMS/WhatsApp/Email delivery to real devices is not supported and what the admin should do instead (e.g., copy and share manually).",
+        "The disclaimer is visible without needing to inspect console logs and is written in English.",
+        "No immutable frontend paths are modified."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/admin/CommunicationDisclaimer.tsx",
+          "operation": "create",
+          "description": "Create a small admin-only disclaimer component that renders prominent English text explaining Email/SMS/WhatsApp are simulated in-app logs and will not be delivered; include guidance to copy/share manually."
+        },
+        {
+          "path": "frontend/src/components/admin/CommunicationSimulation.tsx",
+          "operation": "modify",
+          "description": "Wire the new `CommunicationDisclaimer` into the communication simulation/log section so the disclaimer is prominently visible alongside the Email/SMS/WhatsApp log previews."
+        }
+      ]
+    }
+  ]
+}

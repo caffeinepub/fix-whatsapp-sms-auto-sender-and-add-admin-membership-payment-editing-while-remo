@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Gym membership management app (Prime Fit Gym) with admin tools for editing memberships/payments, removal of expense tracking, and automated member notifications (email/SMS/WhatsApp) for credentials and plan/payment details.",
+  "architectural_notes": [
+    "App/project name: Prime Fit Gym.",
+    "Notification system required: backend event/log should correspond to actual outbound delivery (email/SMS/WhatsApp), not just backend status."
+  ],
+  "known_issues": [
+    "Email/SMS/WhatsApp notifications appear in backend but are not being delivered to the phone number."
+  ],
+  "isFixRequest": true,
+  "existing_features": [
+    {
+      "id": "feature-update-the-admin-ui-member-creation-success-experience-to-clearly-present-email-sms-whatsapp-outputs-as-simulated-not-delivered-communication-logs-not-real-notifications-while-still-allowing-the-admin-to-copy-credentials-and-message-content",
+      "title": "Update the admin UI member-creation success experience to clearly present Email/SMS/WhatsApp outputs as simulated/not-delivered communication logs (not real notifications), while still allowing the admin to copy credentials and message content.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-consistent-ui-disclaimer-anywhere-the-app-shows-email-sms-whatsapp-notifications-that-these-channels-are-simulated-in-app-logs-and-will-not-be-delivered-to-a-phone-number-within-this-platform-build",
+      "title": "Add a consistent UI disclaimer anywhere the app shows Email/SMS/WhatsApp ‘notifications’ that these channels are simulated in-app logs and will not be delivered to a phone number within this platform build.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Add admin membership editing system (modify member plan, duration, etc.)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add admin payment editing tools (update member payment details)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Remove expense tracking module and exclude expenses from dashboards/reports",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Fix notification delivery: email/SMS/WhatsApp notifications show in backend but are not delivered to the phone number",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "When admin adds a member, auto-send generated login credentials plus membership plan and payment details via email and also via SMS/WhatsApp to the member’s mobile number",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Implement backend support for admin-created members to return a complete onboarding payload that includes the member profile, the admin-provided credentials, and generated communication log entries for Email, SMS, and WhatsApp containing the member’s login credentials plus membership plan and payment details.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Prime Fit Gym",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}
