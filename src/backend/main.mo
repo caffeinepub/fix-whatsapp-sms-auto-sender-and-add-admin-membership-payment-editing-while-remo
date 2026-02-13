@@ -6,6 +6,7 @@ import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
 
+
 import AccessControl "authorization/access-control";
 import UserApproval "user-approval/approval";
 import MixinAuthorization "authorization/MixinAuthorization";
@@ -13,9 +14,8 @@ import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 import OutCall "http-outcalls/outcall";
 import Stripe "stripe/stripe";
-import Migration "migration";
 
-(with migration = Migration.run)
+
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -1236,15 +1236,18 @@ actor {
       Runtime.trap("Unauthorized: Only admins can create members");
     };
 
-    if (not isEmailUnique(request.credentials.email)) {
+    let email = request.credentials.email;
+    let password = request.credentials.password;
+
+    if (not isEmailUnique(email)) {
       Runtime.trap("Invalid member creation: Email already exists in the system");
     };
 
-    if (request.credentials.password == "") {
+    if (password == "") {
       Runtime.trap("Invalid member creation: Password cannot be empty");
     };
 
-    memberCredentials.add(request.credentials.email, request.credentials.password);
+    memberCredentials.add(email, password);
 
     let dummyPrincipal = Principal.fromText("aaaaa-aa");
     let uniqueId = generateMemberId();
@@ -1257,7 +1260,7 @@ actor {
       id = uniqueId;
       principal = dummyPrincipal;
       name = request.name;
-      email = request.credentials.email;
+      email;
       phone = request.phone;
       membershipStatus = #pending;
       startDate;
@@ -1272,9 +1275,9 @@ actor {
 
     minimalMembers.add(uniqueId, { id = uniqueId; name = request.name });
 
-    let emailContent = "Welcome to Prime Fit Gym!\n\nYour login credentials:\nEmail: " # request.credentials.email # "\nPassword: " # request.credentials.password # "\n\nMembership Plan: " # request.membershipPlan.name # "\nDuration: " # request.membershipPlan.durationMonths.toText() # " months\nPrice: ₹" # request.membershipPlan.price.toText();
-    let smsContent = "Welcome to Prime Fit Gym! Login: " # request.credentials.email # " | Password: " # request.credentials.password # " | Plan: " # request.membershipPlan.name;
-    let whatsappContent = "🏋️ Welcome to Prime Fit Gym!\n\n✅ Your Account Details:\nEmail: " # request.credentials.email # "\nPassword: " # request.credentials.password # "\n\n💪 Membership: " # request.membershipPlan.name # "\n⏰ Duration: " # request.membershipPlan.durationMonths.toText() # " months\n💰 Price: ₹" # request.membershipPlan.price.toText();
+    let emailContent = "Welcome to Prime Fit Gym!\n\nYour login credentials:\nEmail: " # email # "\nPassword: " # password # "\n\nMembership Plan: " # request.membershipPlan.name # "\nDuration: " # request.membershipPlan.durationMonths.toText() # " months\nPrice: ₹" # request.membershipPlan.price.toText();
+    let smsContent = "Welcome to Prime Fit Gym! Login: " # email # " | Password: " # password # " | Plan: " # request.membershipPlan.name;
+    let whatsappContent = "🏋️ Welcome to Prime Fit Gym!\n\n✅ Your Account Details:\nEmail: " # email # "\nPassword: " # password # "\n\n💪 Membership: " # request.membershipPlan.name # "\n⏰ Duration: " # request.membershipPlan.durationMonths.toText() # " months\n💰 Price: ₹" # request.membershipPlan.price.toText();
 
     let emailLog : CommunicationLogEntry = {
       channel = #email;
@@ -1295,9 +1298,9 @@ actor {
       status = #sent;
     };
 
-    communicationLogs.add(request.credentials.email # "_email", emailLog);
-    communicationLogs.add(request.credentials.email # "_sms", smsLog);
-    communicationLogs.add(request.credentials.email # "_whatsapp", whatsappLog);
+    communicationLogs.add(email # "_email", emailLog);
+    communicationLogs.add(email # "_sms", smsLog);
+    communicationLogs.add(email # "_whatsapp", whatsappLog);
 
     {
       member = memberProfile;
@@ -1434,3 +1437,4 @@ actor {
     notifications;
   };
 };
+

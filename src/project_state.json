@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 5,
+  "projectStateVersion": 9,
   "summary": "Gym membership management app (Prime Fit Gym) with admin tools for editing memberships/payments, removal of expense tracking, automated member notifications (email/SMS/WhatsApp), and support for real member login accounts for admin-added members (not just simulated credentials/logs).",
   "architectural_notes": [
     "App/project name: Prime Fit Gym.",
@@ -10,7 +10,7 @@
     "Email/SMS/WhatsApp notifications appear in backend but are not being delivered to the phone number.",
     "Admin-added members cannot log in because no real auth account/credentials are created (credentials generation currently disabled/returns trap)."
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
       "id": "feature-update-the-admin-ui-member-creation-success-experience-to-clearly-present-email-sms-whatsapp-outputs-as-simulated-not-delivered-communication-logs-not-real-notifications-while-still-allowing-the-admin-to-copy-credentials-and-message-content",
@@ -33,6 +33,22 @@
       "title": "Make the member dashboard data-access flow work for email/password-authenticated members after login (i.e., member portal screens can load the logged-in member’s data without requiring the caller to be authenticated via Internet Identity).",
       "reqIds": [
         "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-admin-ui-member-creation-flow-supports-manual-entry-of-member-email-and-password-and-uses-the-manual-credential-creation-endpoint-then-presents-the-returned-credentials-and-simulated-communication-logs-in-the-success-experience",
+      "title": "Ensure the admin UI member-creation flow supports manual entry of member email and password and uses the manual-credential creation endpoint, then presents the returned credentials and simulated communication logs in the success experience.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-admin-ui-features-to-edit-and-delete-membership-plans-after-they-are-created-in-the-existing-admin-members-area-membermanagement-the-ui-must-list-existing-membership-plans-and-provide-actions-to-1-edit-plan-fields-name-durationmonths-price-benefits-and-save-changes-and-2-delete-a-plan-with-a-confirmation-step",
+      "title": "Add admin UI features to edit and delete membership plans after they are created, in the existing admin Members area (MemberManagement). The UI must list existing membership plans and provide actions to (1) edit plan fields (name, durationMonths, price, benefits) and save changes, and (2) delete a plan with a confirmation step.",
+      "reqIds": [
+        "REQ-9"
       ],
       "version": 1
     }
@@ -97,8 +113,43 @@
         "REQ-5"
       ],
       "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Update admin member creation UI/flow to allow admin to manually enter member email and password at creation time (so admin-added members can log in)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Implement/finish the backend pathway used by the admin UI to create a member with manually entered email/password (the canister method `addMemberWithManualCredentials(request : ManualCreateMemberRequest) : async ManualCreateMemberResponse`) so that the provided credentials are persisted and the created member can later authenticate via the existing member login flow.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Add admin features to edit membership plans (update plan details after creation)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Add admin features to delete membership plans (remove plans after creation)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Ensure the backend canister interface exposed to the frontend includes membership plan update and delete methods used by the new admin UI (i.e., the frontend can call `updateMembershipPlan` and `deleteMembershipPlan` without missing-candid/type errors), and that both methods remain admin-only.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "status": "pending"
     }
   ],
+  "gameProjectType": "none",
   "projectName": "Prime Fit Gym",
   "clarification_mode": "instant",
   "clarification_rounds": 0

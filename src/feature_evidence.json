@@ -2,12 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-make-the-member-dashboard-data-access-flow-work-for-email-password-authenticated-members-after-login-i-e-member-portal-screens-can-load-the-logged-in-member-s-data-without-requiring-the-caller-to-be-authenticated-via-internet-identity",
-      "featureTitle": "Make the member dashboard data-access flow work for email/password-authenticated members after login (i.e., member portal screens can load the logged-in member’s data without requiring the caller to be authenticated via Internet Identity).",
+      "featureId": "feature-add-admin-ui-features-to-edit-and-delete-membership-plans-after-they-are-created-in-the-existing-admin-members-area-membermanagement-the-ui-must-list-existing-membership-plans-and-provide-actions-to-1-edit-plan-fields-name-durationmonths-price-benefits-and-save-changes-and-2-delete-a-plan-with-a-confirmation-step",
+      "featureTitle": "Add admin UI features to edit and delete membership plans after they are created, in the existing admin Members area (MemberManagement). The UI must list existing membership plans and provide actions to (1) edit plan fields (name, durationMonths, price, benefits) and save changes, and (2) delete a plan with a confirmation step.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/DashboardLayout.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/components/admin/MemberManagement.tsx",
+        "frontend/src/components/admin/MembershipPlanManagement.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -24,7 +23,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-6"
+        "REQ-9"
       ],
       "confidence": "high"
     }

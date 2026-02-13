@@ -1,58 +1,45 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T06:12:29.964Z",
+  "generatedAt": "2026-02-08T07:12:17.906Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
+    "total": 2,
     "implemented": 1,
     "items": [
       {
-        "id": "REQ-4",
-        "summary": "Implement backend support for real email/password authentication for admin-created members so that a member added by an admin can successfully log in from the existing Member Login form.",
+        "id": "REQ-10",
+        "summary": "Ensure the backend canister interface exposed to the frontend includes membership plan update and delete methods used by the new admin UI (i.e., the frontend can call `updateMembershipPlan` and `deleteMembershipPlan` without missing-candid/type errors), and that both methods remain admin-only.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-5",
-        "summary": "Update the backend admin member-creation pathway that accepts manual credentials (used by `addMemberWithManualCredentials`) to persist those credentials and associate them with the created member record so the member can later log in with the same email/password.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-6",
-        "summary": "Make the member dashboard data-access flow work for email/password-authenticated members after login (i.e., member portal screens can load the logged-in member’s data without requiring the caller to be authenticated via Internet Identity).",
+        "id": "REQ-9",
+        "summary": "Add admin UI features to edit and delete membership plans after they are created, in the existing admin Members area (MemberManagement). The UI must list existing membership plans and provide actions to (1) edit plan fields (name, durationMonths, price, benefits) and save changes, and (2) delete a plan with a confirmation step.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/LoginPage.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/DashboardLayout.tsx"
+          "frontend/src/components/admin/MembershipPlanManagement.tsx",
+          "frontend/src/components/admin/MemberManagement.tsx",
+          "frontend/src/hooks/useQueries.ts"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/components/DashboardLayout.tsx"
+          "frontend/src/components/admin/MembershipPlanManagement.tsx",
+          "frontend/src/components/admin/MemberManagement.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/DashboardLayout.tsx",
-    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/components/admin/MemberManagement.tsx",
+    "frontend/src/components/admin/MembershipPlanManagement.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
