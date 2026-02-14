@@ -157,6 +157,7 @@ export interface Payment {
     id: string;
     status: PaymentStatus;
     memberId: Principal;
+    email: string;
     timestamp: Time;
     amount: bigint;
 }
@@ -287,14 +288,18 @@ export interface backendInterface {
     addMemberWithManualCredentials(request: ManualCreateMemberRequest): Promise<ManualCreateMemberResponse>;
     addMembershipPlan(plan: MembershipPlan): Promise<void>;
     addPayment(payment: Payment): Promise<void>;
+    addPaymentByEmail(email: string, amount: bigint, status: PaymentStatus): Promise<string>;
+    addPaymentByPhone(phone: string, amount: bigint, status: PaymentStatus): Promise<string>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     assignRole(user: Principal, role: UserRole): Promise<void>;
     checkIn(): Promise<AttendanceRecord>;
     checkOut(): Promise<AttendanceRecord>;
     createCheckoutSession(items: Array<ShoppingItem>, successUrl: string, cancelUrl: string): Promise<string>;
     createMemberWithCredentials(arg0: CreateMemberRequest): Promise<CreateMemberResponse>;
+    deleteExpense(expenseId: string): Promise<void>;
     deleteMember(id: bigint): Promise<void>;
     deleteMembershipPlan(id: string): Promise<void>;
+    deletePayment(paymentId: string): Promise<void>;
     generateQrCode(memberId: bigint): Promise<string>;
     getAllCommunicationLogs(): Promise<Array<CommunicationLogEntry>>;
     getAllExpenses(): Promise<Array<Expense>>;
@@ -317,6 +322,8 @@ export interface backendInterface {
     getMembershipPlan(id: string): Promise<MembershipPlan>;
     getMyQrCode(): Promise<string | null>;
     getPayment(id: string): Promise<Payment>;
+    getPaymentsByEmail(email: string): Promise<Array<Payment>>;
+    getPaymentsByPhone(phone: string): Promise<Array<Payment>>;
     getRegisteredMembers(): Promise<Array<RegisteredMemberInfo>>;
     getReports(): Promise<ReportSummary>;
     getStripeSessionStatus(sessionId: string): Promise<StripeSessionStatus>;
@@ -340,5 +347,6 @@ export interface backendInterface {
     updateMemberProfile(profile: MemberProfile): Promise<void>;
     updateMemberWorkoutPlan(memberId: bigint, plan: WorkoutPlan): Promise<void>;
     updateMembershipPlan(plan: MembershipPlan): Promise<void>;
+    updatePayment(payment: Payment): Promise<void>;
     validateQrCode(qr: string): Promise<bigint>;
 }

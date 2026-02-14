@@ -155,6 +155,7 @@ export const Payment = IDL.Record({
   'id' : IDL.Text,
   'status' : PaymentStatus,
   'memberId' : IDL.Principal,
+  'email' : IDL.Text,
   'timestamp' : Time,
   'amount' : IDL.Nat,
 });
@@ -314,6 +315,16 @@ export const idlService = IDL.Service({
     ),
   'addMembershipPlan' : IDL.Func([MembershipPlan], [], []),
   'addPayment' : IDL.Func([Payment], [], []),
+  'addPaymentByEmail' : IDL.Func(
+      [IDL.Text, IDL.Nat, PaymentStatus],
+      [IDL.Text],
+      [],
+    ),
+  'addPaymentByPhone' : IDL.Func(
+      [IDL.Text, IDL.Nat, PaymentStatus],
+      [IDL.Text],
+      [],
+    ),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'assignRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'checkIn' : IDL.Func([], [AttendanceRecord], []),
@@ -328,8 +339,10 @@ export const idlService = IDL.Service({
       [CreateMemberResponse],
       [],
     ),
+  'deleteExpense' : IDL.Func([IDL.Text], [], []),
   'deleteMember' : IDL.Func([IDL.Nat], [], []),
   'deleteMembershipPlan' : IDL.Func([IDL.Text], [], []),
+  'deletePayment' : IDL.Func([IDL.Text], [], []),
   'generateQrCode' : IDL.Func([IDL.Nat], [IDL.Text], []),
   'getAllCommunicationLogs' : IDL.Func(
       [],
@@ -372,6 +385,8 @@ export const idlService = IDL.Service({
   'getMembershipPlan' : IDL.Func([IDL.Text], [MembershipPlan], ['query']),
   'getMyQrCode' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'getPayment' : IDL.Func([IDL.Text], [Payment], ['query']),
+  'getPaymentsByEmail' : IDL.Func([IDL.Text], [IDL.Vec(Payment)], ['query']),
+  'getPaymentsByPhone' : IDL.Func([IDL.Text], [IDL.Vec(Payment)], ['query']),
   'getRegisteredMembers' : IDL.Func(
       [],
       [IDL.Vec(RegisteredMemberInfo)],
@@ -411,6 +426,7 @@ export const idlService = IDL.Service({
   'updateMemberProfile' : IDL.Func([MemberProfile], [], []),
   'updateMemberWorkoutPlan' : IDL.Func([IDL.Nat, WorkoutPlan], [], []),
   'updateMembershipPlan' : IDL.Func([MembershipPlan], [], []),
+  'updatePayment' : IDL.Func([Payment], [], []),
   'validateQrCode' : IDL.Func([IDL.Text], [IDL.Nat], []),
 });
 
@@ -561,6 +577,7 @@ export const idlFactory = ({ IDL }) => {
     'id' : IDL.Text,
     'status' : PaymentStatus,
     'memberId' : IDL.Principal,
+    'email' : IDL.Text,
     'timestamp' : Time,
     'amount' : IDL.Nat,
   });
@@ -717,6 +734,16 @@ export const idlFactory = ({ IDL }) => {
       ),
     'addMembershipPlan' : IDL.Func([MembershipPlan], [], []),
     'addPayment' : IDL.Func([Payment], [], []),
+    'addPaymentByEmail' : IDL.Func(
+        [IDL.Text, IDL.Nat, PaymentStatus],
+        [IDL.Text],
+        [],
+      ),
+    'addPaymentByPhone' : IDL.Func(
+        [IDL.Text, IDL.Nat, PaymentStatus],
+        [IDL.Text],
+        [],
+      ),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'assignRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'checkIn' : IDL.Func([], [AttendanceRecord], []),
@@ -731,8 +758,10 @@ export const idlFactory = ({ IDL }) => {
         [CreateMemberResponse],
         [],
       ),
+    'deleteExpense' : IDL.Func([IDL.Text], [], []),
     'deleteMember' : IDL.Func([IDL.Nat], [], []),
     'deleteMembershipPlan' : IDL.Func([IDL.Text], [], []),
+    'deletePayment' : IDL.Func([IDL.Text], [], []),
     'generateQrCode' : IDL.Func([IDL.Nat], [IDL.Text], []),
     'getAllCommunicationLogs' : IDL.Func(
         [],
@@ -783,6 +812,8 @@ export const idlFactory = ({ IDL }) => {
     'getMembershipPlan' : IDL.Func([IDL.Text], [MembershipPlan], ['query']),
     'getMyQrCode' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'getPayment' : IDL.Func([IDL.Text], [Payment], ['query']),
+    'getPaymentsByEmail' : IDL.Func([IDL.Text], [IDL.Vec(Payment)], ['query']),
+    'getPaymentsByPhone' : IDL.Func([IDL.Text], [IDL.Vec(Payment)], ['query']),
     'getRegisteredMembers' : IDL.Func(
         [],
         [IDL.Vec(RegisteredMemberInfo)],
@@ -826,6 +857,7 @@ export const idlFactory = ({ IDL }) => {
     'updateMemberProfile' : IDL.Func([MemberProfile], [], []),
     'updateMemberWorkoutPlan' : IDL.Func([IDL.Nat, WorkoutPlan], [], []),
     'updateMembershipPlan' : IDL.Func([MembershipPlan], [], []),
+    'updatePayment' : IDL.Func([Payment], [], []),
     'validateQrCode' : IDL.Func([IDL.Text], [IDL.Nat], []),
   });
 };

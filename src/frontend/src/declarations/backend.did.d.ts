@@ -145,6 +145,7 @@ export interface Payment {
   'id' : string,
   'status' : PaymentStatus,
   'memberId' : Principal,
+  'email' : string,
   'timestamp' : Time,
   'amount' : bigint,
 }
@@ -274,6 +275,8 @@ export interface _SERVICE {
   >,
   'addMembershipPlan' : ActorMethod<[MembershipPlan], undefined>,
   'addPayment' : ActorMethod<[Payment], undefined>,
+  'addPaymentByEmail' : ActorMethod<[string, bigint, PaymentStatus], string>,
+  'addPaymentByPhone' : ActorMethod<[string, bigint, PaymentStatus], string>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'assignRole' : ActorMethod<[Principal, UserRole], undefined>,
   'checkIn' : ActorMethod<[], AttendanceRecord>,
@@ -286,8 +289,10 @@ export interface _SERVICE {
     [CreateMemberRequest],
     CreateMemberResponse
   >,
+  'deleteExpense' : ActorMethod<[string], undefined>,
   'deleteMember' : ActorMethod<[bigint], undefined>,
   'deleteMembershipPlan' : ActorMethod<[string], undefined>,
+  'deletePayment' : ActorMethod<[string], undefined>,
   'generateQrCode' : ActorMethod<[bigint], string>,
   'getAllCommunicationLogs' : ActorMethod<[], Array<CommunicationLogEntry>>,
   'getAllExpenses' : ActorMethod<[], Array<Expense>>,
@@ -319,6 +324,8 @@ export interface _SERVICE {
   'getMembershipPlan' : ActorMethod<[string], MembershipPlan>,
   'getMyQrCode' : ActorMethod<[], [] | [string]>,
   'getPayment' : ActorMethod<[string], Payment>,
+  'getPaymentsByEmail' : ActorMethod<[string], Array<Payment>>,
+  'getPaymentsByPhone' : ActorMethod<[string], Array<Payment>>,
   'getRegisteredMembers' : ActorMethod<[], Array<RegisteredMemberInfo>>,
   'getReports' : ActorMethod<[], ReportSummary>,
   'getStripeSessionStatus' : ActorMethod<[string], StripeSessionStatus>,
@@ -345,6 +352,7 @@ export interface _SERVICE {
   'updateMemberProfile' : ActorMethod<[MemberProfile], undefined>,
   'updateMemberWorkoutPlan' : ActorMethod<[bigint, WorkoutPlan], undefined>,
   'updateMembershipPlan' : ActorMethod<[MembershipPlan], undefined>,
+  'updatePayment' : ActorMethod<[Payment], undefined>,
   'validateQrCode' : ActorMethod<[string], bigint>,
 }
 export declare const idlService: IDL.ServiceClass;

@@ -1,41 +1,30 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T07:12:17.903Z",
-  "summary": "Frontend adds a new MembershipPlanManagement component and wires it into the existing admin MemberManagement area, providing edit and delete actions (with dialogs and English UI text). However, there are no backend changes shown to ensure update/delete methods are exposed/admin-only as required, and React Query invalidation/refresh behavior is not evidenced in the provided diff summary.",
+  "generatedAt": "2026-02-14T02:53:31.093Z",
+  "summary": "The diff does not show any implemented change to the Reports > Member Financial Overview `moneyDue` calculation. Only type definitions are visible in the truncated `backend/main.mo`, and `project_state.json` was modified in a way not requested by the BuildRequest.",
   "missing_requirements": [
     {
-      "id": "REQ-10",
-      "requirement": "Ensure the backend canister interface exposed to the frontend includes membership plan update and delete methods (`updateMembershipPlan`, `deleteMembershipPlan`) and that both methods remain admin-only.",
-      "reason": "No backend files (e.g., `backend/main.mo` or candid/interface generation) are modified in the diff summary, so there’s no evidence that the interface/admin-only enforcement was added or verified.",
+      "id": "REQ-22",
+      "requirement": "Fix the admin Reports data so that, in Reports > Member Financial Overview, the returned `ReportMember.moneyDue` value represents the correct outstanding balance for each member (plan price minus sum of relevant payments; never negative; matches by current identifier approach; no traps; consistent with UI).",
+      "reason": "The provided `backend/main.mo` diff excerpt contains type definitions but no visible changes to the report-building logic or any computation of `ReportMember.moneyDue` from membership plan price minus summed payments. Because the file content is truncated and no relevant logic is shown, there is insufficient evidence that the required calculation fix was implemented.",
       "evidence": [
-        "File diff summary shows only frontend changes: added `frontend/src/components/admin/MembershipPlanManagement.tsx`; modified `frontend/src/components/admin/MemberManagement.tsx`, `frontend-file-summaries.txt`, `project_state.json`."
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "requirement": "UI refreshes the membership plan list after updating/deleting via React Query invalidation.",
-      "reason": "The new component calls `mutateAsync` and closes dialogs, but the diff summary does not show any query invalidation or refetch logic in the component, and `frontend/src/hooks/useQueries.ts` is not listed as modified, so refresh via invalidation is not evidenced.",
-      "evidence": [
-        "frontend/src/components/admin/MembershipPlanManagement.tsx (added): calls `updateMembershipPlan.mutateAsync(updatedPlan)` and `deleteMembershipPlan.mutateAsync(selectedPlan.id)` but no invalidation/refetch shown in provided excerpt.",
-        "File diff summary does not list `frontend/src/hooks/useQueries.ts` as modified."
+        "backend/main.mo (truncated; only types shown, no report/moneyDue calculation visible)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Unrequested fixes/changes to other admin UI pieces (e.g., corrected prop usage for `ProfilePictureModal` and `CommunicationSimulation`).",
-      "reason": "BuildRequest is specifically about edit/delete controls for membership plans; the diff summary indicates additional adjustments unrelated to plan management.",
+      "description": "Project metadata/state update (schema/projectStateVersion/summary/existing_features listing) unrelated to fixing `ReportMember.moneyDue` calculation.",
+      "reason": "The BuildRequest is focused on a backend fix for the Reports money due calculation and includes constraints/non-goals about not adding new UI/report sections. Modifying `project_state.json` is not mentioned as part of the requested work.",
       "evidence": [
-        "frontend-file-summaries.txt: `frontend/src/components/admin/MemberManagement.tsx` summary mentions \"corrected prop usage for ProfilePictureModal (open/onOpenChange) and CommunicationSimulation (response).\""
+        "project_state.json (truncated)"
       ]
     }
   ],
-  "confidence": 0.74,
+  "confidence": 0.62,
   "changed_files": [
-    "frontend-file-summaries.txt",
-    "frontend/src/components/admin/MemberManagement.tsx",
-    "frontend/src/components/admin/MembershipPlanManagement.tsx",
+    "backend/main.mo",
     "project_state.json"
   ]
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 9,
+  "projectStateVersion": 17,
   "summary": "Gym membership management app (Prime Fit Gym) with admin tools for editing memberships/payments, removal of expense tracking, automated member notifications (email/SMS/WhatsApp), and support for real member login accounts for admin-added members (not just simulated credentials/logs).",
   "architectural_notes": [
     "App/project name: Prime Fit Gym.",
@@ -8,9 +8,11 @@
   ],
   "known_issues": [
     "Email/SMS/WhatsApp notifications appear in backend but are not being delivered to the phone number.",
-    "Admin-added members cannot log in because no real auth account/credentials are created (credentials generation currently disabled/returns trap)."
+    "Admin-added members cannot log in because no real auth account/credentials are created (credentials generation currently disabled/returns trap).",
+    "Reports feature is not working (user reports 'Report is not working' after redeploy).",
+    "Reports > Member Financial Overview: 'Money due' is shown/calculated incorrectly (appears tied to a personal member payment instead of true outstanding balance)."
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-update-the-admin-ui-member-creation-success-experience-to-clearly-present-email-sms-whatsapp-outputs-as-simulated-not-delivered-communication-logs-not-real-notifications-while-still-allowing-the-admin-to-copy-credentials-and-message-content",
@@ -49,6 +51,62 @@
       "title": "Add admin UI features to edit and delete membership plans after they are created, in the existing admin Members area (MemberManagement). The UI must list existing membership plans and provide actions to (1) edit plan fields (name, durationMonths, price, benefits) and save changes, and (2) delete a plan with a confirmation step.",
       "reqIds": [
         "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-admin-reports-feature-so-that-the-reports-tab-loads-successfully-for-an-approved-admin-and-renders-report-data-instead-of-staying-stuck-in-a-loading-state",
+      "title": "Fix the Admin Reports feature so that the Reports tab loads successfully for an approved admin and renders report data instead of staying stuck in a loading state.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-frontend-reports-ui-to-handle-query-errors-explicitly-show-an-english-error-message-and-provide-a-retry-action-instead-of-rendering-only-a-spinner-when-report-data-is-unavailable",
+      "title": "Update the frontend Reports UI to handle query errors explicitly: show an English error message, and provide a retry action instead of rendering only a spinner when report data is unavailable.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-admin-financial-management-ui-frontend-src-components-admin-financialmanagement-tsx-to-record-payments-by-member-email-or-phone-instead-of-member-principal-id-and-adjust-the-payment-table-to-show-the-member-s-email-phone-identifier-in-a-human-readable-way",
+      "title": "Update the Admin Financial Management UI (frontend/src/components/admin/FinancialManagement.tsx) to record payments by member email or phone instead of member Principal ID, and adjust the payment table to show the member’s email/phone identifier in a human-readable way.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-member-payment-history-flow-so-member-payment-history-can-be-retrieved-reliably-even-when-payments-are-recorded-via-email-phone-lookup-i-e-the-member-portal-should-still-show-the-correct-payment-history-for-the-logged-in-member",
+      "title": "Update the member payment history flow so member payment history can be retrieved reliably even when payments are recorded via email/phone lookup (i.e., the member portal should still show the correct payment history for the logged-in member).",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-admin-financial-management-ui-frontend-src-components-admin-financialmanagement-tsx-payments-table-to-include-edit-and-delete-actions-for-each-payment-record-including-confirmation-for-delete-and-an-edit-dialog-that-saves-changes-via-the-new-backend-methods",
+      "title": "Update the Admin Financial Management UI (frontend/src/components/admin/FinancialManagement.tsx) Payments table to include Edit and Delete actions for each payment record, including confirmation for delete and an edit dialog that saves changes via the new backend methods.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-admin-financial-management-ui-frontend-src-components-admin-financialmanagement-tsx-expenses-table-to-allow-deleting-expense-records-from-the-ui-with-a-confirmation-step-and-query-refresh",
+      "title": "Update the Admin Financial Management UI (frontend/src/components/admin/FinancialManagement.tsx) Expenses table to allow deleting expense records from the UI, with a confirmation step and query refresh.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-extend-react-query-hooks-in-frontend-src-hooks-usequeries-ts-to-support-payment-update-delete-and-expense-delete-operations-and-ensure-relevant-query-caches-are-invalidated-payments-expenses-reports-memberpayments-where-applicable",
+      "title": "Add/extend React Query hooks in frontend/src/hooks/useQueries.ts to support payment update/delete and expense delete operations, and ensure relevant query caches are invalidated (payments, expenses, reports, memberPayments where applicable).",
+      "reqIds": [
+        "REQ-21"
       ],
       "version": 1
     }
@@ -145,6 +203,70 @@
       "summary": "Ensure the backend canister interface exposed to the frontend includes membership plan update and delete methods used by the new admin UI (i.e., the frontend can call `updateMembershipPlan` and `deleteMembershipPlan` without missing-candid/type errors), and that both methods remain admin-only.",
       "reqIds": [
         "REQ-10"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Ensure the backend exposes a stable admin-only reports query method that returns the ReportSummary used by the frontend (monthlyRevenue, totalPayments, totalExpenses, profit, members), and that it does not trap for normal 'no data yet' scenarios (e.g., no payments/expenses/members).",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Update payment records to be linked/queried by member phone number or email (not member principal id), so admin can find payments using phone/email identifiers",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Update the backend payments data model and APIs so that admins can record and look up payments using a member’s phone number or email address (not requiring the admin to provide a member Principal ID).",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Add edit and delete options for payment records in the admin UI (ability to update or remove an existing payment record)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Delete existing expense records (remove stored expense entries as part of removing expense tracking)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-23",
+      "summary": "Add backend admin-only canister methods to update and delete an existing payment record, identified by payment ID, so the admin UI can edit payment details and remove incorrect payments.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Add backend admin-only canister methods to delete expense records (at minimum: delete an expense by expense ID) so the admin can remove stored expenses.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-26",
+      "summary": "Fix Reports > Member Financial Overview: 'Money due' is being shown/calculated incorrectly (appears to be based on personal member payment rather than correct outstanding balance)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-27",
+      "summary": "Fix the admin Reports data so that, in Reports > Member Financial Overview, the returned `ReportMember.moneyDue` value represents the correct outstanding balance for each member (not a value derived from an individual/personal payment record).",
+      "reqIds": [
+        "REQ-22"
       ],
       "status": "pending"
     }

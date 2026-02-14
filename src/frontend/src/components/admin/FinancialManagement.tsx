@@ -1,7 +1,15 @@
 import { useState } from 'react';
-import { useGetAllPayments, useGetAllExpenses, useAddPayment, useAddExpense } from '../../hooks/useQueries';
-import { Payment, Expense, PaymentStatus, ExpenseType } from '../../backend';
-import { Principal } from '@dfinity/principal';
+import { 
+  useGetAllPayments, 
+  useGetAllExpenses, 
+  useAddPaymentByIdentifier, 
+  useAddExpense, 
+  useGetAllMembers,
+  useUpdatePayment,
+  useDeletePayment,
+  useDeleteExpense
+} from '../../hooks/useQueries';
+import { Expense, PaymentStatus, ExpenseType, Payment } from '../../backend';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,6 +26,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -32,20 +50,35 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Loader2, IndianRupee, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Loader2, IndianRupee, TrendingUp, TrendingDown, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function FinancialManagement() {
   const { data: payments = [], isLoading: paymentsLoading } = useGetAllPayments();
   const { data: expenses = [], isLoading: expensesLoading } = useGetAllExpenses();
-  const addPayment = useAddPayment();
+  const { data: members = [] } = useGetAllMembers();
+  const addPaymentByIdentifier = useAddPaymentByIdentifier();
   const addExpense = useAddExpense();
+  const updatePayment = useUpdatePayment();
+  const deletePayment = useDeletePayment();
+  const deleteExpense = useDeleteExpense();
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  const [isEditPaymentDialogOpen, setIsEditPaymentDialogOpen] = useState(false);
+  const [isDeletePaymentDialogOpen, setIsDeletePaymentDialogOpen] = useState(false);
+  const [isDeleteExpenseDialogOpen, setIsDeleteExpenseDialogOpen] = useState(false);
+
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
   const [paymentForm, setPaymentForm] = useState({
-    memberId: '',
+    memberIdentifier: '',
+    amount: '',
+    status: PaymentStatus.paid,
+  });
+
+  const [editPaymentForm, setEditPaymentForm] = useState({
     amount: '',
     status: PaymentStatus.paid,
   });
@@ -57,26 +90,100 @@ export default function FinancialManagement() {
   });
 
   const handleAddPayment = async () => {
-    if (!paymentForm.memberId || !paymentForm.amount) {
+    if (!paymentForm.memberIdentifier || !paymentForm.amount) {
       toast.error('Please fill in all fields');
       return;
     }
 
     try {
-      const payment: Payment = {
-        id: `PAY_${Date.now()}`,
-        memberId: Principal.fromText(paymentForm.memberId),
+      await addPaymentByIdentifier.mutateAsync({
+        identifier: paymentForm.memberIdentifier.trim(),
         amount: BigInt(Math.round(parseFloat(paymentForm.amount))),
-        timestamp: BigInt(Date.now() * 1000000),
         status: paymentForm.status,
-      };
-
-      await addPayment.mutateAsync(payment);
+      });
       toast.success('Payment recorded successfully');
       setIsPaymentDialogOpen(false);
-      setPaymentForm({ memberId: '', amount: '', status: PaymentStatus.paid });
-    } catch (error) {
-      toast.error('Failed to record payment');
+      setPaymentForm({ memberIdentifier: '', amount: '', status: PaymentStatus.paid });
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to record payment';
+      if (errorMessage.includes('does not belong to any member')) {
+        toast.error('Member not found with the provided email or phone');
+      } else {
+        toast.error(errorMessage);
+      }
+      console.error(error);
+    }
+  };
+
+  const handleEditPayment = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setEditPaymentForm({
+      amount: payment.amount.toString(),
+      status: payment.status,
+    });
+    setIsEditPaymentDialogOpen(true);
+  };
+
+  const handleUpdatePayment = async () => {
+    if (!selectedPayment || !editPaymentForm.amount) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    try {
+      const updatedPayment: Payment = {
+        ...selectedPayment,
+        amount: BigInt(Math.round(parseFloat(editPaymentForm.amount))),
+        status: editPaymentForm.status,
+      };
+
+      await updatePayment.mutateAsync(updatedPayment);
+      toast.success('Payment updated successfully');
+      setIsEditPaymentDialogOpen(false);
+      setSelectedPayment(null);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to update payment';
+      toast.error(errorMessage);
+      console.error(error);
+    }
+  };
+
+  const handleDeletePaymentClick = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setIsDeletePaymentDialogOpen(true);
+  };
+
+  const handleConfirmDeletePayment = async () => {
+    if (!selectedPayment) return;
+
+    try {
+      await deletePayment.mutateAsync(selectedPayment.id);
+      toast.success('Payment deleted successfully');
+      setIsDeletePaymentDialogOpen(false);
+      setSelectedPayment(null);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to delete payment';
+      toast.error(errorMessage);
+      console.error(error);
+    }
+  };
+
+  const handleDeleteExpenseClick = (expense: Expense) => {
+    setSelectedExpense(expense);
+    setIsDeleteExpenseDialogOpen(true);
+  };
+
+  const handleConfirmDeleteExpense = async () => {
+    if (!selectedExpense) return;
+
+    try {
+      await deleteExpense.mutateAsync(selectedExpense.id);
+      toast.success('Expense deleted successfully');
+      setIsDeleteExpenseDialogOpen(false);
+      setSelectedExpense(null);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to delete expense';
+      toast.error(errorMessage);
       console.error(error);
     }
   };
@@ -123,6 +230,12 @@ export default function FinancialManagement() {
       case PaymentStatus.failed:
         return <Badge variant="destructive">Failed</Badge>;
     }
+  };
+
+  // Helper to get member display name from email
+  const getMemberDisplayName = (email: string): string => {
+    const member = members.find(m => m.email === email);
+    return member ? `${member.name} (${email})` : email;
   };
 
   if (paymentsLoading || expensesLoading) {
@@ -197,12 +310,12 @@ export default function FinancialManagement() {
                     </DialogHeader>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="memberId">Member Principal ID</Label>
+                        <Label htmlFor="memberIdentifier">Member Email or Phone</Label>
                         <Input
-                          id="memberId"
-                          placeholder="Enter member principal ID"
-                          value={paymentForm.memberId}
-                          onChange={(e) => setPaymentForm({ ...paymentForm, memberId: e.target.value })}
+                          id="memberIdentifier"
+                          placeholder="Enter member email or phone number"
+                          value={paymentForm.memberIdentifier}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, memberIdentifier: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
@@ -239,8 +352,8 @@ export default function FinancialManagement() {
                       <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button onClick={handleAddPayment} disabled={addPayment.isPending}>
-                        {addPayment.isPending ? (
+                      <Button onClick={handleAddPayment} disabled={addPaymentByIdentifier.isPending}>
+                        {addPaymentByIdentifier.isPending ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Recording...
@@ -260,16 +373,17 @@ export default function FinancialManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Payment ID</TableHead>
-                      <TableHead>Member ID</TableHead>
+                      <TableHead>Member</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {payments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
                           No payments recorded
                         </TableCell>
                       </TableRow>
@@ -277,8 +391,8 @@ export default function FinancialManagement() {
                       payments.map((payment) => (
                         <TableRow key={payment.id}>
                           <TableCell className="font-mono text-sm">{payment.id}</TableCell>
-                          <TableCell className="font-mono text-xs">
-                            {payment.memberId.toString().slice(0, 10)}...
+                          <TableCell className="max-w-[200px] truncate">
+                            {getMemberDisplayName(payment.email)}
                           </TableCell>
                           <TableCell className="font-semibold">
                             {formatCurrency(Number(payment.amount))}
@@ -286,6 +400,26 @@ export default function FinancialManagement() {
                           <TableCell>{getPaymentStatusBadge(payment.status)}</TableCell>
                           <TableCell>
                             {new Date(Number(payment.timestamp) / 1000000).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEditPayment(payment)}
+                                title="Edit payment"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeletePaymentClick(payment)}
+                                title="Delete payment"
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -387,12 +521,13 @@ export default function FinancialManagement() {
                       <TableHead>Type</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {expenses.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
                           No expenses recorded
                         </TableCell>
                       </TableRow>
@@ -410,6 +545,16 @@ export default function FinancialManagement() {
                           <TableCell>
                             {new Date(Number(expense.timestamp) / 1000000).toLocaleDateString()}
                           </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteExpenseClick(expense)}
+                              title="Delete expense"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -420,6 +565,144 @@ export default function FinancialManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Payment Dialog */}
+      <Dialog open={isEditPaymentDialogOpen} onOpenChange={setIsEditPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Payment</DialogTitle>
+            <DialogDescription>Update payment details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editPaymentId">Payment ID</Label>
+              <Input
+                id="editPaymentId"
+                value={selectedPayment?.id || ''}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editAmount">Amount (₹)</Label>
+              <Input
+                id="editAmount"
+                type="number"
+                step="1"
+                placeholder="0"
+                value={editPaymentForm.amount}
+                onChange={(e) => setEditPaymentForm({ ...editPaymentForm, amount: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editPaymentStatus">Status</Label>
+              <Select
+                value={editPaymentForm.status}
+                onValueChange={(value) =>
+                  setEditPaymentForm({ ...editPaymentForm, status: value as PaymentStatus })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={PaymentStatus.paid}>Paid</SelectItem>
+                  <SelectItem value={PaymentStatus.pending}>Pending</SelectItem>
+                  <SelectItem value={PaymentStatus.failed}>Failed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditPaymentDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdatePayment} disabled={updatePayment.isPending}>
+              {updatePayment.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Payment'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Payment Confirmation Dialog */}
+      <AlertDialog open={isDeletePaymentDialogOpen} onOpenChange={setIsDeletePaymentDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Payment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this payment record? This action cannot be undone.
+              {selectedPayment && (
+                <div className="mt-4 rounded-md bg-muted p-3 text-sm">
+                  <p><strong>Payment ID:</strong> {selectedPayment.id}</p>
+                  <p><strong>Amount:</strong> {formatCurrency(Number(selectedPayment.amount))}</p>
+                  <p><strong>Member:</strong> {getMemberDisplayName(selectedPayment.email)}</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeletePayment}
+              disabled={deletePayment.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deletePayment.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Payment'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Expense Confirmation Dialog */}
+      <AlertDialog open={isDeleteExpenseDialogOpen} onOpenChange={setIsDeleteExpenseDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this expense record? This action cannot be undone.
+              {selectedExpense && (
+                <div className="mt-4 rounded-md bg-muted p-3 text-sm">
+                  <p><strong>Expense ID:</strong> {selectedExpense.id}</p>
+                  <p><strong>Description:</strong> {selectedExpense.description}</p>
+                  <p><strong>Amount:</strong> {formatCurrency(Number(selectedExpense.amount))}</p>
+                  <p><strong>Type:</strong> {selectedExpense.type}</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteExpense}
+              disabled={deleteExpense.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteExpense.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Expense'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,68 +1,39 @@
 {
   "kind": "build_request",
-  "title": "Add admin edit/delete controls for membership plans",
+  "title": "Fix Reports > Member Financial Overview money due calculation",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-9",
-      "text": "Add admin UI features to edit and delete membership plans after they are created, in the existing admin Members area (MemberManagement). The UI must list existing membership plans and provide actions to (1) edit plan fields (name, durationMonths, price, benefits) and save changes, and (2) delete a plan with a confirmation step.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "When admin creat plan add the features for edit and delete"
-        ]
-      },
-      "acceptanceCriteria": [
-        "In the Admin dashboard > Members tab, there is a visible section that lists existing membership plans (in addition to the existing ‘create new plan’ flow).",
-        "Each listed plan has an Edit action that opens a form pre-filled with the plan’s current values and allows updating name, duration (months), price, and benefits.",
-        "Saving an edited plan persists via the existing backend method `updateMembershipPlan(plan : MembershipPlan)` and the UI refreshes the plan list (React Query invalidation).",
-        "Each listed plan has a Delete action that requires confirmation and then deletes via the existing backend method `deleteMembershipPlan(id : Text)` and the UI refreshes the plan list (React Query invalidation).",
-        "All user-facing text for these plan-management actions is in English (e.g., labels, buttons, dialogs, confirmation prompts, toasts)."
-      ]
-    },
-    {
-      "id": "REQ-10",
-      "text": "Ensure the backend canister interface exposed to the frontend includes membership plan update and delete methods used by the new admin UI (i.e., the frontend can call `updateMembershipPlan` and `deleteMembershipPlan` without missing-candid/type errors), and that both methods remain admin-only.",
+      "id": "REQ-22",
+      "text": "Fix the admin Reports data so that, in Reports > Member Financial Overview, the returned `ReportMember.moneyDue` value represents the correct outstanding balance for each member (not a value derived from an individual/personal payment record).",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "When admin creat plan add the features for edit and delete"
+          "In reports Member Financial Overview in money due shown by personal member payment"
         ]
       },
       "acceptanceCriteria": [
-        "Calls to `updateMembershipPlan(plan : MembershipPlan)` and `deleteMembershipPlan(id : Text)` succeed for admins and trap/deny for non-admin callers.",
-        "Frontend build compiles with no missing method/type errors related to membership plan update/delete."
+        "When an admin loads Reports, each row’s Money Due is computed as: member’s current membership plan price minus the sum of that member’s relevant payments (do not use a single payment record as the Money Due value).",
+        "Money Due is never negative; if payments meet or exceed the plan price, Money Due is shown as 0.",
+        "Payments considered for Money Due must match the member using the app’s current identifier approach (email/phone/principal as supported by the backend) so that payments recorded via email/phone are reflected in Reports.",
+        "Reports continues to load successfully for an approved admin (no traps) and `ReportSummary.members[].moneyDue` is consistent with what the Reports UI displays."
       ]
     }
   ],
   "constraints": [
-    "Do not edit any files under `frontend/src/components/ui` (shadcn components are read-only).",
-    "Do not edit files listed as immutable in SYSTEM_CONTEXT (e.g., `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, Internet Identity hooks).",
-    "Backend must remain a single Motoko actor with logic in `backend/main.mo`; only add `backend/migration.mo` changes if state migration is strictly required."
+    "Backend must remain a single Motoko actor in backend/main.mo; do not introduce additional canisters/services.",
+    "Do not edit files in frontend immutablePaths (per SYSTEM_CONTEXT).",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Do not implement new notification delivery (Email/SMS/WhatsApp) behavior.",
-    "Do not redesign member creation, member editing, or payment management beyond what is required to edit/delete membership plans.",
-    "Do not add external databases or third-party services."
+    "Adding new report sections or new fields to the Reports UI beyond fixing the Money Due calculation.",
+    "Changing the visual design/layout of the Reports page beyond what is required to reflect the corrected Money Due values."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

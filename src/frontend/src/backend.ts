@@ -239,6 +239,7 @@ export interface Payment {
     id: string;
     status: PaymentStatus;
     memberId: Principal;
+    email: string;
     timestamp: Time;
     amount: bigint;
 }
@@ -380,14 +381,18 @@ export interface backendInterface {
     addMemberWithManualCredentials(request: ManualCreateMemberRequest): Promise<ManualCreateMemberResponse>;
     addMembershipPlan(plan: MembershipPlan): Promise<void>;
     addPayment(payment: Payment): Promise<void>;
+    addPaymentByEmail(email: string, amount: bigint, status: PaymentStatus): Promise<string>;
+    addPaymentByPhone(phone: string, amount: bigint, status: PaymentStatus): Promise<string>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     assignRole(user: Principal, role: UserRole): Promise<void>;
     checkIn(): Promise<AttendanceRecord>;
     checkOut(): Promise<AttendanceRecord>;
     createCheckoutSession(items: Array<ShoppingItem>, successUrl: string, cancelUrl: string): Promise<string>;
     createMemberWithCredentials(arg0: CreateMemberRequest): Promise<CreateMemberResponse>;
+    deleteExpense(expenseId: string): Promise<void>;
     deleteMember(id: bigint): Promise<void>;
     deleteMembershipPlan(id: string): Promise<void>;
+    deletePayment(paymentId: string): Promise<void>;
     generateQrCode(memberId: bigint): Promise<string>;
     getAllCommunicationLogs(): Promise<Array<CommunicationLogEntry>>;
     getAllExpenses(): Promise<Array<Expense>>;
@@ -410,6 +415,8 @@ export interface backendInterface {
     getMembershipPlan(id: string): Promise<MembershipPlan>;
     getMyQrCode(): Promise<string | null>;
     getPayment(id: string): Promise<Payment>;
+    getPaymentsByEmail(email: string): Promise<Array<Payment>>;
+    getPaymentsByPhone(phone: string): Promise<Array<Payment>>;
     getRegisteredMembers(): Promise<Array<RegisteredMemberInfo>>;
     getReports(): Promise<ReportSummary>;
     getStripeSessionStatus(sessionId: string): Promise<StripeSessionStatus>;
@@ -433,6 +440,7 @@ export interface backendInterface {
     updateMemberProfile(profile: MemberProfile): Promise<void>;
     updateMemberWorkoutPlan(memberId: bigint, plan: WorkoutPlan): Promise<void>;
     updateMembershipPlan(plan: MembershipPlan): Promise<void>;
+    updatePayment(payment: Payment): Promise<void>;
     validateQrCode(qr: string): Promise<bigint>;
 }
 import type { AppRole as _AppRole, ApprovalStatus as _ApprovalStatus, AttendanceRecord as _AttendanceRecord, BookingStatus as _BookingStatus, ClassBooking as _ClassBooking, ClassType as _ClassType, CommunicationChannel as _CommunicationChannel, CommunicationLogEntry as _CommunicationLogEntry, CommunicationStatus as _CommunicationStatus, CreateMemberRequest as _CreateMemberRequest, CreateMemberResponse as _CreateMemberResponse, Credentials as _Credentials, DietPlan as _DietPlan, Expense as _Expense, ExpenseType as _ExpenseType, ExternalBlob as _ExternalBlob, ManualCreateMemberRequest as _ManualCreateMemberRequest, ManualCreateMemberResponse as _ManualCreateMemberResponse, MemberCredentials as _MemberCredentials, MemberProfile as _MemberProfile, MembershipPlan as _MembershipPlan, MembershipStatus as _MembershipStatus, Payment as _Payment, PaymentStatus as _PaymentStatus, ReportMember as _ReportMember, ReportSummary as _ReportSummary, SerializeMemberProfile as _SerializeMemberProfile, StripeSessionStatus as _StripeSessionStatus, Time as _Time, UserApprovalInfo as _UserApprovalInfo, UserProfile as _UserProfile, UserRole as _UserRole, WorkoutPlan as _WorkoutPlan, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
@@ -634,6 +642,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async addPaymentByEmail(arg0: string, arg1: bigint, arg2: PaymentStatus): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addPaymentByEmail(arg0, arg1, to_candid_PaymentStatus_n42(this._uploadFile, this._downloadFile, arg2));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addPaymentByEmail(arg0, arg1, to_candid_PaymentStatus_n42(this._uploadFile, this._downloadFile, arg2));
+            return result;
+        }
+    }
+    async addPaymentByPhone(arg0: string, arg1: bigint, arg2: PaymentStatus): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addPaymentByPhone(arg0, arg1, to_candid_PaymentStatus_n42(this._uploadFile, this._downloadFile, arg2));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addPaymentByPhone(arg0, arg1, to_candid_PaymentStatus_n42(this._uploadFile, this._downloadFile, arg2));
+            return result;
+        }
+    }
     async assignCallerUserRole(arg0: Principal, arg1: UserRole): Promise<void> {
         if (this.processError) {
             try {
@@ -718,6 +754,20 @@ export class Backend implements backendInterface {
             return from_candid_CreateMemberResponse_n51(this._uploadFile, this._downloadFile, result);
         }
     }
+    async deleteExpense(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteExpense(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteExpense(arg0);
+            return result;
+        }
+    }
     async deleteMember(arg0: bigint): Promise<void> {
         if (this.processError) {
             try {
@@ -743,6 +793,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteMembershipPlan(arg0);
+            return result;
+        }
+    }
+    async deletePayment(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deletePayment(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deletePayment(arg0);
             return result;
         }
     }
@@ -1052,6 +1116,34 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getPayment(arg0);
             return from_candid_Payment_n60(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPaymentsByEmail(arg0: string): Promise<Array<Payment>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPaymentsByEmail(arg0);
+                return from_candid_vec_n59(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPaymentsByEmail(arg0);
+            return from_candid_vec_n59(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPaymentsByPhone(arg0: string): Promise<Array<Payment>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPaymentsByPhone(arg0);
+                return from_candid_vec_n59(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPaymentsByPhone(arg0);
+            return from_candid_vec_n59(this._uploadFile, this._downloadFile, result);
         }
     }
     async getRegisteredMembers(): Promise<Array<RegisteredMemberInfo>> {
@@ -1376,6 +1468,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updatePayment(arg0: Payment): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updatePayment(to_candid_Payment_n40(this._uploadFile, this._downloadFile, arg0));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updatePayment(to_candid_Payment_n40(this._uploadFile, this._downloadFile, arg0));
+            return result;
+        }
+    }
     async validateQrCode(arg0: string): Promise<bigint> {
         if (this.processError) {
             try {
@@ -1680,12 +1786,14 @@ function from_candid_record_n61(_uploadFile: (file: ExternalBlob) => Promise<Uin
     id: string;
     status: _PaymentStatus;
     memberId: Principal;
+    email: string;
     timestamp: _Time;
     amount: bigint;
 }): {
     id: string;
     status: PaymentStatus;
     memberId: Principal;
+    email: string;
     timestamp: Time;
     amount: bigint;
 } {
@@ -1693,6 +1801,7 @@ function from_candid_record_n61(_uploadFile: (file: ExternalBlob) => Promise<Uin
         id: value.id,
         status: from_candid_PaymentStatus_n62(_uploadFile, _downloadFile, value.status),
         memberId: value.memberId,
+        email: value.email,
         timestamp: value.timestamp,
         amount: value.amount
     };
@@ -2149,12 +2258,14 @@ function to_candid_record_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     id: string;
     status: PaymentStatus;
     memberId: Principal;
+    email: string;
     timestamp: Time;
     amount: bigint;
 }): {
     id: string;
     status: _PaymentStatus;
     memberId: Principal;
+    email: string;
     timestamp: _Time;
     amount: bigint;
 } {
@@ -2162,6 +2273,7 @@ function to_candid_record_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8
         id: value.id,
         status: to_candid_PaymentStatus_n42(_uploadFile, _downloadFile, value.status),
         memberId: value.memberId,
+        email: value.email,
         timestamp: value.timestamp,
         amount: value.amount
     };

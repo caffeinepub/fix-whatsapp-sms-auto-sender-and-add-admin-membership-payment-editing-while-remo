@@ -1,35 +1,6 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Admin membership plan edit/delete controls in MemberManagement",
-  "requirements": [
-    {
-      "id": "REQ-9",
-      "summary": "Add an admin-only membership plan management section in MemberManagement to list plans and support editing and deleting with confirmation and React Query refresh.",
-      "acceptanceCriteria": [
-        "In the Admin dashboard > Members tab, there is a visible section that lists existing membership plans (in addition to the existing ‘create new plan’ flow).",
-        "Each listed plan has an Edit action that opens a form pre-filled with the plan’s current values and allows updating name, duration (months), price, and benefits.",
-        "Saving an edited plan persists via the existing backend method `updateMembershipPlan(plan : MembershipPlan)` and the UI refreshes the plan list (React Query invalidation).",
-        "Each listed plan has a Delete action that requires confirmation and then deletes via the existing backend method `deleteMembershipPlan(id : Text)` and the UI refreshes the plan list (React Query invalidation).",
-        "All user-facing text for these plan-management actions is in English (e.g., labels, buttons, dialogs, confirmation prompts, toasts)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/admin/MembershipPlanManagement.tsx",
-          "operation": "create",
-          "description": "Create a focused admin UI component that: fetches and lists membership plans (using existing React Query hooks), provides an Edit dialog with a pre-filled form (name, durationMonths, price, benefits) that calls `useUpdateMembershipPlan`, and provides a Delete action with an explicit confirmation step that calls `useDeleteMembershipPlan`; show English labels/buttons/prompts and success/error toasts; keep BigInt fields handled safely (string inputs converted to BigInt for saves)."
-        },
-        {
-          "path": "frontend/src/components/admin/MemberManagement.tsx",
-          "operation": "modify",
-          "description": "Wire the new MembershipPlanManagement section into the existing admin Members area UI (MemberManagement) so the plan list and edit/delete actions are visible alongside the current create-plan flow; ensure the section renders loading/empty states (e.g., while `useGetAllMembershipPlans` is loading) and that all user-facing text related to plan management is English."
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Verify/adjust (without changing immutable hooks) the membership plan React Query hooks to fully support the new UI: ensure `useUpdateMembershipPlan` and `useDeleteMembershipPlan` are exported and invalidate the `membershipPlans` query key on success; confirm error handling surfaces usable messages to the UI layer."
-        }
-      ]
-    }
-  ]
+  "title": "Reports: Member Financial Overview money due calculation (frontend-only plan)",
+  "requirements": []
 }

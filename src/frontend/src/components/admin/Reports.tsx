@@ -1,7 +1,8 @@
 import { useGetReports } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, TrendingUp, Users, IndianRupee, AlertCircle, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, TrendingUp, Users, IndianRupee, AlertCircle, Calendar, AlertTriangle, RefreshCw } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -26,12 +27,47 @@ import {
 import { MembershipStatus } from '../../backend';
 
 export default function Reports() {
-  const { data: reportData, isLoading } = useGetReports();
+  const { data: reportData, isLoading, isError, error, refetch } = useGetReports();
 
-  if (isLoading || !reportData) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="flex items-center gap-2 text-destructive">
+          <AlertTriangle className="h-8 w-8" />
+          <h3 className="text-lg font-semibold">Failed to load reports</h3>
+        </div>
+        <p className="text-muted-foreground text-center max-w-md">
+          {error instanceof Error 
+            ? error.message.includes('Unauthorized') 
+              ? 'You do not have permission to view reports. Please contact an administrator.'
+              : 'An error occurred while loading the reports. Please try again.'
+            : 'An unexpected error occurred. Please try again.'}
+        </p>
+        <Button onClick={() => refetch()} variant="outline" className="gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!reportData) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <AlertCircle className="h-8 w-8 text-muted-foreground" />
+        <p className="text-muted-foreground">No report data available</p>
+        <Button onClick={() => refetch()} variant="outline" className="gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Retry
+        </Button>
       </div>
     );
   }

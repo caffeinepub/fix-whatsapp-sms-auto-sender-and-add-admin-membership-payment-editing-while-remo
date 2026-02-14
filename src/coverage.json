@@ -1,45 +1,33 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T07:12:17.906Z",
+  "generatedAt": "2026-02-14T02:53:31.096Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 1,
+    "total": 1,
+    "implemented": 0,
     "items": [
       {
-        "id": "REQ-10",
-        "summary": "Ensure the backend canister interface exposed to the frontend includes membership plan update and delete methods used by the new admin UI (i.e., the frontend can call `updateMembershipPlan` and `deleteMembershipPlan` without missing-candid/type errors), and that both methods remain admin-only.",
+        "id": "REQ-22",
+        "summary": "Fix the admin Reports data so that, in Reports > Member Financial Overview, the returned `ReportMember.moneyDue` value represents the correct outstanding balance for each member (not a value derived from an individual/personal payment record).",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
-      },
-      {
-        "id": "REQ-9",
-        "summary": "Add admin UI features to edit and delete membership plans after they are created, in the existing admin Members area (MemberManagement). The UI must list existing membership plans and provide actions to (1) edit plan fields (name, durationMonths, price, benefits) and save changes, and (2) delete a plan with a confirmation step.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/admin/MembershipPlanManagement.tsx",
-          "frontend/src/components/admin/MemberManagement.tsx",
-          "frontend/src/hooks/useQueries.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/admin/MembershipPlanManagement.tsx",
-          "frontend/src/components/admin/MemberManagement.tsx"
-        ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/admin/MemberManagement.tsx",
-    "frontend/src/components/admin/MembershipPlanManagement.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

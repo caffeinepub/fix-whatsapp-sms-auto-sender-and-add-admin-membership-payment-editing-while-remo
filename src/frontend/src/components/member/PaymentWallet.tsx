@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useGetMemberPayments } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -9,16 +11,51 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, CreditCard, IndianRupee } from 'lucide-react';
+import { Loader2, CreditCard, IndianRupee, AlertCircle, RefreshCw } from 'lucide-react';
 import { PaymentStatus } from '../../backend';
 
 export default function PaymentWallet() {
-  const { data: payments = [], isLoading } = useGetMemberPayments();
+  const { data: payments = [], isLoading, isError, error, refetch } = useGetMemberPayments();
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <AlertCircle className="mb-4 h-16 w-16 text-destructive" />
+        <h3 className="mb-2 text-lg font-semibold">Failed to Load Payment History</h3>
+        <p className="mb-4 text-sm text-muted-foreground">
+          {error?.message || 'An error occurred while loading your payment history.'}
+        </p>
+        <Button onClick={handleRetry} disabled={isRetrying}>
+          {isRetrying ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Retrying...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry
+            </>
+          )}
+        </Button>
       </div>
     );
   }

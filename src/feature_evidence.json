@@ -1,31 +1,4 @@
 {
   "kind": "feature_evidence_report",
-  "features": [
-    {
-      "featureId": "feature-add-admin-ui-features-to-edit-and-delete-membership-plans-after-they-are-created-in-the-existing-admin-members-area-membermanagement-the-ui-must-list-existing-membership-plans-and-provide-actions-to-1-edit-plan-fields-name-durationmonths-price-benefits-and-save-changes-and-2-delete-a-plan-with-a-confirmation-step",
-      "featureTitle": "Add admin UI features to edit and delete membership plans after they are created, in the existing admin Members area (MemberManagement). The UI must list existing membership plans and provide actions to (1) edit plan fields (name, durationMonths, price, benefits) and save changes, and (2) delete a plan with a confirmation step.",
-      "files": [
-        "frontend/src/components/admin/MemberManagement.tsx",
-        "frontend/src/components/admin/MembershipPlanManagement.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "qr-code@1.0.0",
-        "stripe@3.0.0",
-        "blob-storage@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "camera@1.0.0",
-        "http-outcalls@3.0.0",
-        "user-approval@3.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-9"
-      ],
-      "confidence": "high"
-    }
-  ]
+  "features": []
 }

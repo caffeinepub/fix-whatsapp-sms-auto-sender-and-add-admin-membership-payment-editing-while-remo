@@ -1,21 +1,21 @@
 import Map "mo:core/Map";
 import Array "mo:core/Array";
 import Principal "mo:core/Principal";
+import Iter "mo:core/Iter";
 import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
 
-
-import AccessControl "authorization/access-control";
-import UserApproval "user-approval/approval";
 import MixinAuthorization "authorization/MixinAuthorization";
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 import OutCall "http-outcalls/outcall";
 import Stripe "stripe/stripe";
+import AccessControl "authorization/access-control";
+import UserApproval "user-approval/approval";
 
-
+// Attach the migration module via the `with` clause
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -23,7 +23,6 @@ actor {
 
   let approvalState = UserApproval.initState(accessControlState);
 
-  // --- Type Definitions ---
   public type AppRole = {
     #Admin;
     #Member;
@@ -84,6 +83,7 @@ actor {
   public type Payment = {
     id : Text;
     memberId : Principal;
+    email : Text;
     amount : Nat;
     timestamp : Time.Time;
     status : PaymentStatus;
@@ -361,6 +361,15 @@ actor {
   func getMemberByEmail(email : Text) : ?MemberProfile {
     for ((_, member) in members.entries()) {
       if (member.email == email) {
+        return ?member;
+      };
+    };
+    null;
+  };
+
+  func getMemberByPhone(phone : Text) : ?MemberProfile {
+    for ((_, member) in members.entries()) {
+      if (member.phone == phone) {
         return ?member;
       };
     };
@@ -650,7 +659,117 @@ actor {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can add payments");
     };
+
+    // Validate that the email belongs to an existing member
+    let member = switch (getMemberByEmail(payment.email)) {
+      case (null) { Runtime.trap("Invalid payment: Email does not belong to any member") };
+      case (?m) { m };
+    };
+
+    // Validate that the memberId matches the member with this email
+    if (member.principal != payment.memberId) {
+      Runtime.trap("Invalid payment: Member ID does not match the email provided");
+    };
+
     payments.add(payment.id, payment);
+  };
+
+  public shared ({ caller }) func addPaymentByEmail(
+    email : Text,
+    amount : Nat,
+    status : PaymentStatus
+  ) : async Text {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can add payments");
+    };
+
+    let member = switch (getMemberByEmail(email)) {
+      case (null) { Runtime.trap("Invalid payment: Email does not belong to any member") };
+      case (?m) { m };
+    };
+
+    let paymentId = generateId();
+    let payment : Payment = {
+      id = paymentId;
+      memberId = member.principal;
+      email = member.email;
+      amount;
+      timestamp = Time.now();
+      status;
+    };
+
+    payments.add(paymentId, payment);
+    paymentId;
+  };
+
+  public shared ({ caller }) func addPaymentByPhone(
+    phone : Text,
+    amount : Nat,
+    status : PaymentStatus
+  ) : async Text {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can add payments");
+    };
+
+    let member = switch (getMemberByPhone(phone)) {
+      case (null) { Runtime.trap("Invalid payment: Phone number does not belong to any member") };
+      case (?m) { m };
+    };
+
+    let paymentId = generateId();
+    let payment : Payment = {
+      id = paymentId;
+      memberId = member.principal;
+      email = member.email;
+      amount;
+      timestamp = Time.now();
+      status;
+    };
+
+    payments.add(paymentId, payment);
+    paymentId;
+  };
+
+  // New method: Update payment (admin only)
+  public shared ({ caller }) func updatePayment(payment : Payment) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can update payments");
+    };
+
+    switch (payments.get(payment.id)) {
+      case (null) { Runtime.trap("Payment not found") };
+      case (?_) {
+        payments.add(payment.id, payment);
+      };
+    };
+  };
+
+  // New method: Delete payment (admin only)
+  public shared ({ caller }) func deletePayment(paymentId : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can delete payments");
+    };
+
+    switch (payments.get(paymentId)) {
+      case (null) { Runtime.trap("Payment not found") };
+      case (?_) {
+        payments.remove(paymentId);
+      };
+    };
+  };
+
+  // New method: Delete expense (admin only)
+  public shared ({ caller }) func deleteExpense(expenseId : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can delete expenses");
+    };
+
+    switch (expenses.get(expenseId)) {
+      case (null) { Runtime.trap("Expense not found") };
+      case (?_) {
+        expenses.remove(expenseId);
+      };
+    };
   };
 
   public query ({ caller }) func getPayment(id : Text) : async Payment {
@@ -675,12 +794,53 @@ actor {
       Runtime.trap("Unauthorized: Only users can view payments");
     };
 
+    // Find the member profile for the caller
+    var callerMember : ?MemberProfile = null;
     for ((_, member) in members.entries()) {
       if (member.principal == caller) {
-        return payments.values().toArray().filter(func(p) { p.memberId == caller });
+        callerMember := ?member;
       };
     };
-    Runtime.trap("Only registered members can view payments");
+
+    let memberProfile = switch (callerMember) {
+      case (null) { Runtime.trap("Only registered members can view payments") };
+      case (?m) { m };
+    };
+
+    // Return payments that match either the principal OR the email
+    // This ensures payments recorded via email lookup are included
+    payments.values().toArray().filter(
+      func(p) { 
+        p.memberId == caller or p.email == memberProfile.email 
+      }
+    );
+  };
+
+  public query ({ caller }) func getPaymentsByEmail(email : Text) : async [Payment] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can look up payments by email");
+    };
+
+    // Validate that the email belongs to a member
+    switch (getMemberByEmail(email)) {
+      case (null) { Runtime.trap("Invalid request: Email does not belong to any member") };
+      case (?_) {};
+    };
+
+    payments.values().toArray().filter(func(p) { p.email == email });
+  };
+
+  public query ({ caller }) func getPaymentsByPhone(phone : Text) : async [Payment] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can look up payments by phone");
+    };
+
+    let member = switch (getMemberByPhone(phone)) {
+      case (null) { Runtime.trap("Invalid request: Phone number does not belong to any member") };
+      case (?m) { m };
+    };
+
+    payments.values().toArray().filter(func(p) { p.email == member.email });
   };
 
   public query ({ caller }) func getAllPayments() : async [Payment] {
@@ -1136,8 +1296,9 @@ actor {
 
     let reportMembers : [ReportMember] = members.values().toArray().map(
       func(m) {
+        // Match payments by email to handle email-based payment recording
         let paymentsArray = payments.values().toArray().filter(
-          func(p) { p.memberId == m.principal }
+          func(p) { p.memberId == m.principal or p.email == m.email }
         );
         let totalPaid = paymentsArray.foldLeft(
           0,
@@ -1413,8 +1574,9 @@ actor {
       }]);
     };
 
+    // Match payments by email to handle email-based payment recording
     let memberPayments = payments.values().toArray().filter(
-      func(p) { p.memberId == member.principal }
+      func(p) { p.memberId == member.principal or p.email == member.email }
     );
     let totalPaid = memberPayments.foldLeft(
       0,
@@ -1437,4 +1599,3 @@ actor {
     notifications;
   };
 };
-

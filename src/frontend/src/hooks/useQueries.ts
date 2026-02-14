@@ -19,6 +19,7 @@ import {
   ManualCreateMemberResponse,
   SerializeMemberProfile,
   Notification,
+  PaymentStatus,
 } from '../backend';
 import { Principal } from '@dfinity/principal';
 
@@ -376,24 +377,12 @@ export function useGetAllPayments() {
 
 export function useGetMemberPayments() {
   const { actor, isFetching } = useActor();
-  const queryClient = useQueryClient();
 
   return useQuery<Payment[]>({
     queryKey: ['memberPayments'],
     queryFn: async () => {
       if (!actor) return [];
-      
-      // For email/password members, filter from cached member profile
-      if (isEmailPasswordMember()) {
-        const memberProfile = queryClient.getQueryData<MemberProfile>(['authenticatedMember']);
-        if (!memberProfile) return [];
-        
-        // Get all payments and filter by member principal
-        const allPayments = await actor.getAllPayments();
-        return allPayments.filter(p => p.memberId.toString() === memberProfile.principal.toString());
-      }
-      
-      // For Internet Identity users, use the backend method
+      // Use the backend method that matches payments by both principal and email
       return actor.getMemberPayments();
     },
     enabled: !!actor && !isFetching,
@@ -414,6 +403,78 @@ export function useAddPayment() {
       queryClient.invalidateQueries({ queryKey: ['memberPayments'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       queryClient.invalidateQueries({ queryKey: ['memberNotifications'] });
+    },
+  });
+}
+
+// New hook for adding payment by email or phone
+export function useAddPaymentByIdentifier() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      identifier, 
+      amount, 
+      status 
+    }: { 
+      identifier: string; 
+      amount: bigint; 
+      status: PaymentStatus;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
+      
+      // Determine if identifier is email or phone
+      // Simple heuristic: if it contains @, it's an email; otherwise, it's a phone
+      const isEmail = identifier.includes('@');
+      
+      if (isEmail) {
+        return actor.addPaymentByEmail(identifier, amount, status);
+      } else {
+        return actor.addPaymentByPhone(identifier, amount, status);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['memberPayments'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['memberNotifications'] });
+    },
+  });
+}
+
+// New hook for updating payment
+export function useUpdatePayment() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payment: Payment) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updatePayment(payment);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['memberPayments'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
+
+// New hook for deleting payment
+export function useDeletePayment() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (paymentId: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deletePayment(paymentId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['memberPayments'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
   });
 }
@@ -440,6 +501,23 @@ export function useAddExpense() {
     mutationFn: async (expense: Expense) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addExpense(expense);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
+
+// New hook for deleting expense
+export function useDeleteExpense() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (expenseId: string) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteExpense(expenseId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
@@ -567,112 +645,50 @@ export function useGetMemberProfile() {
       }
       
       // Check sessionStorage for persisted profile data
-      const storedProfileCache = sessionStorage.getItem('memberProfileCache');
-      if (storedProfileCache) {
+      const cachedProfileStr = sessionStorage.getItem('memberProfileCache');
+      if (cachedProfileStr) {
         try {
-          const profileData = JSON.parse(storedProfileCache);
-          // Reconstruct the MemberProfile object with proper types
-          const reconstructedProfile: MemberProfile = {
-            id: BigInt(profileData.id),
-            principal: Principal.fromText(profileData.principal),
-            name: profileData.name,
-            email: profileData.email,
-            phone: profileData.phone,
-            membershipStatus: profileData.membershipStatus,
-            startDate: BigInt(profileData.startDate),
-            endDate: BigInt(profileData.endDate),
-            membershipPlan: profileData.membershipPlan,
-            workoutPlan: profileData.workoutPlan,
-            dietPlan: profileData.dietPlan,
-            profilePic: profileData.profilePic,
-          };
-          // Cache it in React Query for future use
-          queryClient.setQueryData(['authenticatedMember'], reconstructedProfile);
-          return reconstructedProfile;
+          const parsed = JSON.parse(cachedProfileStr);
+          const memberProfile = deserializeMemberProfile(parsed);
+          // Store in query cache for future use
+          queryClient.setQueryData(['authenticatedMember'], memberProfile);
+          return memberProfile;
         } catch (error) {
           console.error('Failed to parse cached member profile:', error);
-          sessionStorage.removeItem('memberProfileCache');
         }
       }
       
-      // Otherwise try to fetch from backend (for Internet Identity authenticated users)
+      // For Internet Identity users, fetch from backend
       if (!actor) return null;
+      if (isEmailPasswordMember()) {
+        // Email/password members should have cached data; if not, return null
+        return null;
+      }
       return actor.getMemberProfile();
     },
     enabled: !!actor && !isFetching,
   });
 }
 
-// Member Notifications Query - uses cached profile for email/password members
-export function useGetMemberNotifications() {
-  const { actor, isFetching } = useActor();
+export function useUpdateMemberProfile() {
+  const { actor } = useActor();
   const queryClient = useQueryClient();
 
-  return useQuery<Notification[]>({
-    queryKey: ['memberNotifications'],
-    queryFn: async () => {
-      if (!actor) return [];
-      
-      // For email/password members, generate notifications client-side from cached profile
-      if (isEmailPasswordMember()) {
-        const memberProfile = queryClient.getQueryData<MemberProfile>(['authenticatedMember']);
-        if (!memberProfile) return [];
-        
-        // Generate notifications client-side (similar to backend logic)
-        const notifications: Notification[] = [];
-        const now = Date.now() * 1000000; // Convert to nanoseconds
-        const weekNanos = 7 * 24 * 60 * 60 * 1000000000;
-        
-        const endDate = Number(memberProfile.endDate);
-        
-        // Membership expiring soon
-        if (endDate > now && endDate < (now + weekNanos)) {
-          notifications.push({
-            title: 'Membership Expiring Soon',
-            message: `Your membership will expire soon: ${new Date(Number(memberProfile.endDate) / 1000000).toLocaleDateString()}`,
-            icon: '⚠️',
-            color: '#FFD700',
-            priority: BigInt(2),
-            actions: [['Renew Now', '/renew']],
-            timestamp: BigInt(now),
-          });
-        }
-        
-        // Membership expired
-        if (now > endDate) {
-          notifications.push({
-            title: 'Membership Expired',
-            message: `Your membership expired: ${new Date(Number(memberProfile.endDate) / 1000000).toLocaleDateString()}`,
-            icon: '⌛️',
-            color: '#FF6347',
-            priority: BigInt(1),
-            actions: [['Renew Now', '/renew']],
-            timestamp: BigInt(now),
-          });
-        }
-        
-        // Payment due notification (simplified - assumes no payments made)
-        const memberPlanCost = Number(memberProfile.membershipPlan.price);
-        if (memberPlanCost > 0) {
-          notifications.push({
-            title: 'Payment Due',
-            message: `You have an outstanding payment of ₹${memberPlanCost}`,
-            icon: '💰',
-            color: '#FF6347',
-            priority: BigInt(0),
-            actions: [['Pay Now', '/pay']],
-            timestamp: BigInt(now),
-          });
-        }
-        
-        return notifications;
-      }
-      
-      // For Internet Identity users, use the backend method
-      return actor.getMemberNotifications();
+  return useMutation({
+    mutationFn: async (profile: MemberProfile) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.updateMemberProfile(profile);
     },
-    enabled: !!actor && !isFetching,
-    refetchInterval: 60000, // Refetch every minute to keep notifications up to date
+    onSuccess: (_, updatedProfile) => {
+      queryClient.invalidateQueries({ queryKey: ['memberProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['authenticatedMember'] });
+      queryClient.invalidateQueries({ queryKey: ['members'] });
+      
+      // Update sessionStorage cache for email/password members
+      if (isEmailPasswordMember()) {
+        sessionStorage.setItem('memberProfileCache', JSON.stringify(serializeMemberProfileForStorage(updatedProfile)));
+      }
+    },
   });
 }
 
@@ -698,17 +714,6 @@ export function useGetMyQrCode() {
       return actor.getMyQrCode();
     },
     enabled: !!actor && !isFetching,
-  });
-}
-
-export function useValidateQrCode() {
-  const { actor } = useActor();
-
-  return useMutation({
-    mutationFn: async (qr: string) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.validateQrCode(qr);
-    },
   });
 }
 
@@ -740,14 +745,22 @@ export function useGetRegisteredMembers() {
   });
 }
 
-// Communication Logs Query
-export function useGetCommunicationLogsByEmail() {
-  const { actor } = useActor();
+// Member Notifications Query
+export function useGetMemberNotifications() {
+  const { actor, isFetching } = useActor();
 
-  return useMutation({
-    mutationFn: async (email: string) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getCommunicationLogsByEmail(email);
+  return useQuery<Notification[]>({
+    queryKey: ['memberNotifications'],
+    queryFn: async () => {
+      if (!actor) return [];
+      
+      // For email/password members, return empty array (they can't access notifications via backend)
+      if (isEmailPasswordMember()) {
+        return [];
+      }
+      
+      return actor.getMemberNotifications();
     },
+    enabled: !!actor && !isFetching,
   });
 }
